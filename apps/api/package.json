@@ -16,11 +16,16 @@
     "db:seed": "tsx src/db/apply-sql.ts seed",
     "db:verify": "tsx src/db/verify-database.ts",
     "auth:bootstrap": "tsx src/auth/bootstrap-demo-users.ts",
-    "auth:smoke": "tsx src/auth/smoke-auth.ts"
+    "auth:smoke": "tsx src/auth/smoke-auth.ts",
+    "knowledge:bootstrap": "tsx src/knowledge/bootstrap-demo-knowledge.ts",
+    "knowledge:reindex": "tsx src/knowledge/bootstrap-demo-knowledge.ts --reindex",
+    "knowledge:smoke": "tsx src/knowledge/smoke-retrieval.ts",
+    "knowledge:http-smoke": "tsx src/knowledge/smoke-http.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
     "@fastify/helmet": "^13.0.2",
+    "@fastify/multipart": "9.4.0",
     "@fastify/rate-limit": "^10.3.0",
     "@grounddesk/shared": "workspace:*",
     "@supabase/supabase-js": "^2.87.1",
@@ -28,6 +33,7 @@
     "fastify": "^5.6.2",
     "jose": "^6.1.2",
     "postgres": "^3.4.7",
+    "unpdf": "1.4.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {

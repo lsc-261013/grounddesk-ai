@@ -18,6 +18,7 @@ interface DatabaseInfrastructure {
   rlsTableCount: number
   rlsEnabledCount: number
   migrationCount: number
+  knowledgeBucketExists: boolean
 }
 
 interface DemoCases {
@@ -119,9 +120,17 @@ if (!env.SUPABASE_DB_URL) {
           from grounddesk_internal.schema_migrations
           where version in (
             '202608290001_initial_schema',
-            '202608290002_auth_boundaries'
+            '202608290002_auth_boundaries',
+            '202608290003_knowledge_storage'
           )
-        ) as "migrationCount"
+        ) as "migrationCount",
+        exists (
+          select 1
+          from storage.buckets
+          where id = 'grounddesk-knowledge'
+            and not public
+            and file_size_limit = 10485760
+        ) as "knowledgeBucketExists"
     `
 
     const demoCases = await database<DemoCases[]>`
@@ -170,7 +179,8 @@ if (!env.SUPABASE_DB_URL) {
       rlsCoverage:
         infrastructureResult.rlsTableCount === 25 &&
         infrastructureResult.rlsEnabledCount === infrastructureResult.rlsTableCount,
-      migrationsRecorded: infrastructureResult.migrationCount === 2,
+      migrationsRecorded: infrastructureResult.migrationCount === 3,
+      privateKnowledgeBucket: infrastructureResult.knowledgeBucketExists,
       demoLookup: demoResult.lookupOrderExists,
       returnWindowCases:
         demoResult.withinReturnWindowExists && demoResult.outsideReturnWindowExists,

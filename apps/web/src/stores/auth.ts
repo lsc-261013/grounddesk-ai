@@ -16,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   let listenerRegistered = false
 
   const isAuthenticated = computed(() => Boolean(providerSession.value && session.value))
+  const accessToken = computed(() => providerSession.value?.access_token ?? null)
   const activeMembership = computed(() => session.value?.memberships[0] ?? null)
 
   const loadApiSession = async (accessToken: string): Promise<void> => {
@@ -106,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
+    accessToken,
     activeMembership,
     error,
     initialize,

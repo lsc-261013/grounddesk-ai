@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import {
   AGENT_INTENTS,
+  DOCUMENT_KINDS,
   DOCUMENT_STATUSES,
   ORDER_STATUSES,
   RETURN_ELIGIBILITY_STATUSES,
@@ -13,6 +14,7 @@ import {
 export const localeSchema = z.enum(SUPPORTED_LOCALES)
 export const workspaceRoleSchema = z.enum(WORKSPACE_ROLES)
 export const documentStatusSchema = z.enum(DOCUMENT_STATUSES)
+export const documentKindSchema = z.enum(DOCUMENT_KINDS)
 export const orderStatusSchema = z.enum(ORDER_STATUSES)
 export const agentIntentSchema = z.enum(AGENT_INTENTS)
 export const ticketStatusSchema = z.enum(TICKET_STATUSES)
@@ -77,9 +79,65 @@ export const workspaceAccessResponseSchema = workspaceMembershipSchema.extend({
   permissions: z.array(z.string()),
 })
 
+export const knowledgeDocumentSchema = z.object({
+  id: z.uuid(),
+  workspaceId: z.uuid(),
+  title: z.string().min(1).max(180),
+  originalFilename: z.string().min(1),
+  kind: documentKindSchema,
+  language: z.enum(['zh-CN', 'en-US', 'bilingual']),
+  byteSize: z.number().int().positive(),
+  status: documentStatusSchema,
+  failureCode: z.string().nullable(),
+  failureMessage: z.string().nullable(),
+  processedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  chunkCount: z.number().int().nonnegative(),
+})
+
+export const knowledgeChunkPreviewSchema = z.object({
+  id: z.uuid(),
+  chunkIndex: z.number().int().nonnegative(),
+  content: z.string().min(1),
+  pageStart: z.number().int().positive().nullable(),
+  pageEnd: z.number().int().positive().nullable(),
+  sectionPath: z.array(z.string()),
+  productModels: z.array(z.string()),
+  language: z.enum(['zh-CN', 'en-US', 'bilingual']),
+  tokenCount: z.number().int().positive(),
+})
+
+export const knowledgeDocumentListResponseSchema = z.object({
+  documents: z.array(knowledgeDocumentSchema),
+})
+
+export const knowledgeDocumentUploadResponseSchema = z.object({
+  document: knowledgeDocumentSchema,
+  duplicate: z.boolean(),
+})
+
+export const knowledgeChunkListResponseSchema = z.object({
+  chunks: z.array(knowledgeChunkPreviewSchema),
+})
+
+export const retrievalEvidenceSchema = z.object({
+  chunkId: z.uuid(),
+  documentId: z.uuid(),
+  documentTitle: z.string(),
+  content: z.string(),
+  sectionPath: z.array(z.string()),
+  pageStart: z.number().int().positive().nullable(),
+  pageEnd: z.number().int().positive().nullable(),
+  fusedScore: z.number().nonnegative(),
+  vectorRank: z.number().int().positive().nullable(),
+  keywordRank: z.number().int().positive().nullable(),
+})
+
 export type Locale = z.infer<typeof localeSchema>
 export type WorkspaceRole = z.infer<typeof workspaceRoleSchema>
 export type DocumentStatus = z.infer<typeof documentStatusSchema>
+export type DocumentKind = z.infer<typeof documentKindSchema>
 export type OrderStatus = z.infer<typeof orderStatusSchema>
 export type AgentIntent = z.infer<typeof agentIntentSchema>
 export type TicketStatus = z.infer<typeof ticketStatusSchema>
@@ -92,3 +150,6 @@ export type Profile = z.infer<typeof profileSchema>
 export type WorkspaceMembership = z.infer<typeof workspaceMembershipSchema>
 export type AuthSessionResponse = z.infer<typeof authSessionResponseSchema>
 export type WorkspaceAccessResponse = z.infer<typeof workspaceAccessResponseSchema>
+export type KnowledgeDocument = z.infer<typeof knowledgeDocumentSchema>
+export type KnowledgeChunkPreview = z.infer<typeof knowledgeChunkPreviewSchema>
+export type RetrievalEvidence = z.infer<typeof retrievalEvidenceSchema>

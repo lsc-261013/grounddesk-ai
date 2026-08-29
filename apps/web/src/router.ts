@@ -18,9 +18,20 @@ export const router = createRouter({
     },
     {
       path: '/console',
-      name: 'console',
-      component: () => import('./views/ConsoleView.vue'),
+      component: () => import('./components/ConsoleLayout.vue'),
       meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'console',
+          component: () => import('./views/ConsoleView.vue'),
+        },
+        {
+          path: 'knowledge',
+          name: 'console-knowledge',
+          component: () => import('./views/KnowledgeView.vue'),
+        },
+      ],
     },
   ],
 })

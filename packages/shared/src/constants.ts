@@ -1,5 +1,5 @@
 export const APP_NAME = 'GroundDesk'
-export const DEMO_WORKSPACE_SLUG = 'northstar-audio-demo'
+export const DEMO_WORKSPACE_SLUG = 'avenlo-demo'
 export const EMBEDDING_VECTOR_DIMENSION = 1024
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 export const MAX_WORKSPACE_DOCUMENTS = 20
@@ -12,6 +12,7 @@ export const DEMO_LOGIN_PASSWORD = 'GroundDesk!Demo2026'
 export const SUPPORTED_LOCALES = ['zh-CN', 'en-US'] as const
 export const WORKSPACE_ROLES = ['admin', 'agent'] as const
 export const DOCUMENT_STATUSES = ['queued', 'processing', 'ready', 'failed'] as const
+export const DOCUMENT_KINDS = ['pdf', 'markdown', 'txt'] as const
 export const ORDER_STATUSES = [
   'pending',
   'processing',

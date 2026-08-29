@@ -1,7 +1,7 @@
 import { env } from './env.js'
 
 const configuredProviders = {
-  database: Boolean(env.SUPABASE_URL && env.SUPABASE_SECRET_KEY),
+  database: Boolean(env.SUPABASE_URL && env.SUPABASE_SECRET_KEY && env.SUPABASE_DB_URL),
   generation: Boolean(env.DEEPSEEK_API_KEY),
   embedding: Boolean(env.SILICONFLOW_API_KEY),
 }

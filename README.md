@@ -10,6 +10,8 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 
 里程碑 2 已完成：Supabase Auth 真实密码登录、服务端 JWT Claims 校验、管理员/客服角色权限和 Workspace 双重隔离。管理员、客服与跨 Workspace 场景均已通过真实 Supabase Smoke Test；Demo 账号是明确标注、可重置的模拟账号。
 
+里程碑 3 已完成：管理员可上传 PDF、Markdown 和 TXT，系统会执行私有存储、内容去重、页码/章节感知切块、真实 SiliconFlow BGE-M3 Embedding 与 Supabase pgvector + PostgreSQL 全文混合检索。当前真实 Demo 数据包含 4 份双语文档和 26 个 Chunk；三条核心检索 Smoke Case 均命中预期来源。该小样本结果不作为最终评测准确率。
+
 ## 本地启动
 
 ```bash
@@ -34,6 +36,17 @@ pnpm db:verify
 pnpm auth:bootstrap
 pnpm auth:smoke
 ```
+
+初始化、重建并验证真实知识库：
+
+```bash
+pnpm knowledge:bootstrap
+pnpm knowledge:reindex
+pnpm knowledge:smoke
+pnpm knowledge:http-smoke
+```
+
+`knowledge:smoke` 会调用真实 Embedding 与混合检索；`knowledge:http-smoke` 还会验证登录、Workspace 权限、文档列表、切块预览、内容去重和客服写入拒绝。两者都会产生少量 SiliconFlow 请求。
 
 演示账号是公开测试资料，不用于真实业务：
 

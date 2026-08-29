@@ -37,6 +37,7 @@ describe('API environment validation', () => {
         SUPABASE_URL: 'https://example.supabase.co',
         SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
         SUPABASE_SECRET_KEY: 'sb_secret_test',
+        SUPABASE_DB_URL: 'database-connection-test-value',
         DEEPSEEK_API_KEY: 'deepseek-key',
         SILICONFLOW_API_KEY: 'siliconflow-key',
         EMBEDDING_DIMENSION: '768',

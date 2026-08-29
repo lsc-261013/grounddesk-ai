@@ -82,3 +82,46 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 ### 深入追问
 
 如果问为什么不只依赖 RLS：核心业务只通过 Node API，且服务端可能使用高权限数据库连接，所以 RLS 不能替代服务端授权。当前实现把 Token 校验、成员查询和权限判断拆成接口，既能单测所有拒绝路径，也能用真实 Supabase Smoke Test 验证签名与角色数据。
+
+## 里程碑 3：文档摄取、Embedding 与混合检索
+
+### 解决什么问题
+
+把商家的 PDF、Markdown 和 TXT 变成可追溯证据，而不是把整份文档直接塞给模型。链路必须能发现重复上传、保留页码与章节，并确保每次检索只能看到当前 Workspace 的当前向量版本。
+
+### 数据从哪里来、到哪里去
+
+管理员通过 Fastify Multipart API 上传文档。服务端校验内容并计算 SHA-256，把原文件写入 Supabase 私有 Storage，把解析出的结构化 Chunk 批量发送给 SiliconFlow BGE-M3，最终将 1,024 维向量和元数据写入 PostgreSQL。用户查询同样生成向量，与全文召回结果通过 RRF 融合后返回证据候选。
+
+### 关键文件
+
+- `apps/api/src/knowledge/document-parser.ts`：文件安全校验与 PDF/文本解析。
+- `apps/api/src/knowledge/chunker.ts`：章节感知切块、重叠和 Chunk 去重。
+- `apps/api/src/knowledge/embedding-provider.ts`：SiliconFlow 适配器、维度校验、超时与重试。
+- `apps/api/src/knowledge/postgres-knowledge-repository.ts`：状态持久化、向量写入和 Workspace 范围混合检索。
+- `apps/api/src/knowledge/service.ts`：上传、去重、异步处理与失败重试编排。
+- `apps/web/src/views/KnowledgeView.vue`：上传、状态、错误、权限和切块预览。
+
+### 为什么这样设计
+
+原文件和检索 Chunk 分开保存，既能保留审计来源，也能独立重建索引。文档 Hash 在上传前比较，重复内容不会产生第二份向量费用。Embedding 配置独立版本化，避免换模型后比较不在同一空间的向量。混合检索用可解释的 RRF，而不是把向量距离包装成虚假的准确率。
+
+### 一个真实问题及修复
+
+第一次真实索引后，相似的 `Airwave S1` 与 `Airwave S1 Pro` 章节因为 Chunk 重叠被拼到一起，虽然召回成功，却会给后续生成制造误答风险。修复为：标题边界强制刷新 Chunk，且跨章节不继承重叠。重建索引后，4 份文档由 12 个过粗 Chunk 变为 26 个边界清晰的 Chunk，三个真实检索案例仍全部命中预期来源。
+
+### 如何手动验证
+
+1. 运行 `pnpm knowledge:bootstrap`，再次运行应全部返回 `duplicate: true`。
+2. 运行 `pnpm knowledge:smoke`，检查相似型号、保修与航空限制的前 5 条来源。
+3. 管理员登录 `/console/knowledge`，上传新文档并观察 `queued/processing/ready`。
+4. 展开文档切块，检查章节、页码、商品型号和原文。
+5. 用客服账号上传，API 必须返回 403。
+
+### 面试时 30 秒解释
+
+“上传后我先做内容 Hash 去重，再保留 PDF 页码或 Markdown 标题进行结构化切块。Chunk 用 BGE-M3 生成 1,024 维向量，检索时与 PostgreSQL 全文召回做 RRF 融合。所有索引都绑定 Workspace 和 Embedding 版本，真实 Smoke Test 验证了双语、相似型号和政策问题。”
+
+### 深入追问
+
+如果问为什么不用纯向量：型号、订单字段和术语经常更适合精确关键词召回，而中英文语义问题适合向量召回；RRF 不要求两类分数处在同一尺度。如果问如何换 Embedding 模型：创建新的 `embedding_configs` 版本，重建 Chunk 向量后再切换 active，查询永远指定配置 ID，不混搜旧向量。

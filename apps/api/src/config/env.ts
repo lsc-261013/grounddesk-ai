@@ -45,6 +45,8 @@ const apiEnvSchema = z
       .positive()
       .default(10 * 1024 * 1024),
     MAX_WORKSPACE_DOCUMENTS: z.coerce.number().int().positive().default(20),
+    CHUNK_TARGET_CHARS: z.coerce.number().int().min(400).max(4_000).default(1_200),
+    CHUNK_OVERLAP_CHARS: z.coerce.number().int().min(0).max(1_000).default(180),
     WEBHOOK_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(60_000).default(8_000),
     WEBHOOK_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(3),
   })
@@ -57,6 +59,7 @@ const apiEnvSchema = z
       'SUPABASE_URL',
       'SUPABASE_PUBLISHABLE_KEY',
       'SUPABASE_SECRET_KEY',
+      'SUPABASE_DB_URL',
       'DEEPSEEK_API_KEY',
       'SILICONFLOW_API_KEY',
     ] as const
@@ -76,6 +79,14 @@ const apiEnvSchema = z
         code: 'custom',
         path: ['EMBEDDING_DIMENSION'],
         message: 'Embedding dimension must match the vector(1024) database schema',
+      })
+    }
+
+    if (value.CHUNK_OVERLAP_CHARS >= value.CHUNK_TARGET_CHARS) {
+      context.addIssue({
+        code: 'custom',
+        path: ['CHUNK_OVERLAP_CHARS'],
+        message: 'Chunk overlap must be smaller than the target chunk size',
       })
     }
   })

@@ -2,7 +2,7 @@
 
 ## 当前边界
 
-GroundDesk 使用 pnpm Monorepo。浏览器只接触公开 API 和 Supabase Publishable Key；所有核心业务、Supabase Secret Key、生成模型与 Embedding Key 都留在 Fastify 服务端。Supabase Schema、Demo Seed、密码登录、JWT Claims 校验与角色边界已在真实托管项目完成验证；DeepSeek 与 SiliconFlow 配置已通过环境门禁，真实调用 Smoke Test 将随对应 AI 模块执行。
+GroundDesk 使用 pnpm Monorepo。浏览器只接触公开 API 和 Supabase Publishable Key；所有核心业务、Supabase Secret Key、生成模型与 Embedding Key 都留在 Fastify 服务端。Supabase Schema、Demo Seed、密码登录、JWT Claims 校验、角色边界以及 SiliconFlow Embedding / pgvector 混合检索均已在真实托管项目完成验证；DeepSeek 真实调用会随生成模块执行 Smoke Test。
 
 ```mermaid
 flowchart LR
@@ -13,8 +13,9 @@ flowchart LR
   API -->|getClaims 验证 JWT| Auth
   API -->|参数化查询 + Workspace 授权| Supabase[(Supabase PostgreSQL)]
   Supabase --> Vector[(pgvector 1024d)]
-  API -. 里程碑 3/4 .-> DeepSeek[DeepSeek Generation]
-  API -. 里程碑 3 .-> SiliconFlow[SiliconFlow Embedding]
+  API -. 里程碑 4 .-> DeepSeek[DeepSeek Generation]
+  API --> SiliconFlow[SiliconFlow Embedding]
+  API --> Storage[Supabase Private Storage]
   API -. 里程碑 5 .-> Webhook[Signed Webhook]
 ```
 
@@ -41,7 +42,7 @@ flowchart LR
 
 ## 混合检索基线
 
-数据库函数 `match_hybrid_chunks` 分别计算向量候选与 PostgreSQL 全文候选，再使用 Reciprocal Rank Fusion 合并排名。它只负责候选召回；证据阈值、冲突识别、引用完整性与拒答由后续 RAG 服务层完成。
+数据库函数 `match_hybrid_chunks` 分别计算向量候选与 PostgreSQL 全文候选，再使用 Reciprocal Rank Fusion 合并排名。真实 Demo 数据当前包含 4 份双语文档和 26 个带页码/章节/型号元数据的 Chunk。它只负责候选召回；证据阈值、冲突识别、引用完整性与拒答由后续 RAG 服务层完成。详见 [RAG 数据流](./rag-pipeline.md)。
 
 ## 运行模式
 

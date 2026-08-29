@@ -27,6 +27,10 @@
     "db:verify": "pnpm --filter @grounddesk/api db:verify",
     "auth:bootstrap": "pnpm --filter @grounddesk/api auth:bootstrap",
     "auth:smoke": "pnpm --filter @grounddesk/api auth:smoke",
+    "knowledge:bootstrap": "pnpm --filter @grounddesk/api knowledge:bootstrap",
+    "knowledge:reindex": "pnpm --filter @grounddesk/api knowledge:reindex",
+    "knowledge:smoke": "pnpm --filter @grounddesk/api knowledge:smoke",
+    "knowledge:http-smoke": "pnpm --filter @grounddesk/api knowledge:http-smoke",
     "env:check": "pnpm --filter @grounddesk/api env:check"
   },
   "devDependencies": {
