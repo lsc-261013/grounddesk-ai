@@ -12,6 +12,7 @@ const [migration, seed] = await Promise.all([
 const requiredMigrationFragments = [
   'create extension if not exists vector',
   'extensions.vector(1024)',
+  'operator(extensions.<=>)',
   'create or replace function public.match_hybrid_chunks',
   'alter table public.workspace_members enable row level security',
   'create policy workspaces_member_read',

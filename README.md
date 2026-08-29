@@ -6,7 +6,7 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 
 ## 当前状态
 
-里程碑 1：工程骨架、数据库 Schema、迁移、Demo Seed 与环境校验。
+里程碑 1 已完成：工程骨架、数据库 Schema、迁移、Demo Seed 与环境校验。迁移已在真实 Supabase 项目执行，重复运行会根据版本和 SHA-256 校验和安全跳过；Seed 重跑后仍保持 8 个商品和 30 个订单。
 
 ## 本地启动
 
@@ -23,6 +23,7 @@ pnpm dev
 ```bash
 pnpm db:migrate
 pnpm db:seed
+pnpm db:verify
 ```
 
 ## Monorepo

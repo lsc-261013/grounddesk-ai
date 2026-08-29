@@ -2,7 +2,7 @@
 
 ## 当前边界
 
-GroundDesk 使用 pnpm Monorepo。浏览器只接触公开 API 和 Supabase Publishable Key；所有核心业务、Supabase Secret Key、生成模型与 Embedding Key 都留在 Fastify 服务端。当前里程碑完成了工程与数据边界，尚未声称真实外部服务已经连通。
+GroundDesk 使用 pnpm Monorepo。浏览器只接触公开 API 和 Supabase Publishable Key；所有核心业务、Supabase Secret Key、生成模型与 Embedding Key 都留在 Fastify 服务端。Supabase Schema 与 Demo Seed 已在真实托管项目完成验证；DeepSeek 与 SiliconFlow 配置已通过环境门禁，真实调用 Smoke Test 将随对应 AI 模块执行。
 
 ```mermaid
 flowchart LR

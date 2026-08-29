@@ -14,6 +14,9 @@
 ```bash
 pnpm db:migrate
 pnpm db:seed
+pnpm db:verify
 ```
 
-两个命令均只从服务端环境读取连接地址，不向前端暴露。不要把数据库密码或 Supabase Secret Key 写入仓库。
+如果数据库密码包含 URI 保留字符，可在 Windows 项目终端运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\encode-db-password.ps1`。工具隐藏读取密码并仅把编码结果写入剪贴板。
+
+这些命令只从服务端环境读取连接地址，不向前端暴露。迁移命令通过版本与 SHA-256 校验和防止重复执行和历史文件漂移；验收命令核对 Demo 数据、pgvector、索引、RLS 与关键业务案例。不要把数据库密码或 Supabase Secret Key 写入仓库。

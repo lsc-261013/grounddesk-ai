@@ -523,9 +523,11 @@ as $$
   vector_candidates as (
     select
       id,
-      row_number() over (order by embedding <=> query_embedding) as rank
+      row_number() over (
+        order by embedding operator(extensions.<=>) query_embedding
+      ) as rank
     from eligible
-    order by embedding <=> query_embedding
+    order by embedding operator(extensions.<=>) query_embedding
     limit greatest(result_limit * 4, 20)
   ),
   keyword_candidates as (
