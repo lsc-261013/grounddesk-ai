@@ -1,0 +1,40 @@
+{
+  "name": "grounddesk-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GroundDesk — support answers you can verify.",
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @grounddesk/web --filter @grounddesk/api dev",
+    "dev:web": "pnpm --filter @grounddesk/web dev",
+    "dev:api": "pnpm --filter @grounddesk/api dev",
+    "preview:web": "pnpm --filter @grounddesk/web preview",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint .",
+    "test": "pnpm -r --if-present test",
+    "test:unit": "pnpm -r --if-present test:unit",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "db:validate": "tsx scripts/validate-sql.ts",
+    "env:check": "pnpm --filter @grounddesk/api env:check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-vue": "^10.6.2",
+    "globals": "^16.5.0",
+    "prettier": "^3.7.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1",
+    "vitest": "^4.0.15",
+    "vue-eslint-parser": "^10.2.0"
+  }
+}
