@@ -18,6 +18,13 @@ pnpm dev
 
 离线模式不需要外部密钥，可启动 Web 与 API 骨架。真实 RAG、登录和公开 Demo 必须切换为 `RUNTIME_MODE=connected`，并在服务端配置 Supabase、DeepSeek 与 SiliconFlow 环境变量。
 
+数据库迁移与 Demo Seed 使用根目录 `.env` 中仅服务端可见的 `SUPABASE_DB_URL`：
+
+```bash
+pnpm db:migrate
+pnpm db:seed
+```
+
 ## Monorepo
 
 ```text

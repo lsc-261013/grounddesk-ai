@@ -11,7 +11,9 @@
     "lint": "eslint src tests",
     "test": "vitest run",
     "test:unit": "vitest run tests/env.test.ts",
-    "env:check": "tsx src/config/check-env.ts"
+    "env:check": "tsx src/config/check-env.ts",
+    "db:migrate": "tsx src/db/apply-sql.ts migrate",
+    "db:seed": "tsx src/db/apply-sql.ts seed"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

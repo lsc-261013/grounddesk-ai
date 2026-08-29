@@ -26,6 +26,7 @@ const apiEnvSchema = z
     SUPABASE_ANON_KEY: optionalSecretSchema,
     SUPABASE_SERVICE_ROLE_KEY: optionalSecretSchema,
     SUPABASE_JWT_SECRET: optionalSecretSchema,
+    SUPABASE_DB_URL: optionalSecretSchema,
     DEEPSEEK_API_KEY: optionalSecretSchema,
     DEEPSEEK_BASE_URL: z.url().default('https://api.deepseek.com'),
     DEEPSEEK_MODEL: z.string().min(1).default('deepseek-v4-flash'),
