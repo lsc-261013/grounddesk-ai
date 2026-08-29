@@ -2,10 +2,12 @@ import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const migrationPath = resolve('supabase/migrations/202608290001_initial_schema.sql')
+const authMigrationPath = resolve('supabase/migrations/202608290002_auth_boundaries.sql')
 const seedPath = resolve('supabase/seed/001_demo_workspace.sql')
 
-const [migration, seed] = await Promise.all([
+const [migration, authMigration, seed] = await Promise.all([
   readFile(migrationPath, 'utf8'),
+  readFile(authMigrationPath, 'utf8'),
   readFile(seedPath, 'utf8'),
 ])
 
@@ -27,8 +29,17 @@ const requiredSeedFragments = [
   'current_date',
 ]
 
+const requiredAuthMigrationFragments = [
+  'add column if not exists locale text not null',
+  'create or replace function public.handle_new_auth_user()',
+  'after insert on auth.users',
+  'grant select on public.profiles, public.workspaces, public.workspace_members to authenticated',
+  'revoke execute on function public.handle_new_auth_user() from public, anon, authenticated',
+]
+
 const missingFragments = [
   ...requiredMigrationFragments.filter((fragment) => !migration.includes(fragment)),
+  ...requiredAuthMigrationFragments.filter((fragment) => !authMigration.includes(fragment)),
   ...requiredSeedFragments.filter((fragment) => !seed.includes(fragment)),
 ]
 
@@ -48,7 +59,7 @@ process.stdout.write(
   `${JSON.stringify(
     {
       valid: true,
-      migration: '202608290001_initial_schema.sql',
+      migrations: ['202608290001_initial_schema.sql', '202608290002_auth_boundaries.sql'],
       vectorDimensions: 1024,
       products: productInsertCount,
       generatedOrders: 30,

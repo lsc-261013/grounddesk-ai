@@ -25,6 +25,8 @@
     "db:migrate": "pnpm --filter @grounddesk/api db:migrate",
     "db:seed": "pnpm --filter @grounddesk/api db:seed",
     "db:verify": "pnpm --filter @grounddesk/api db:verify",
+    "auth:bootstrap": "pnpm --filter @grounddesk/api auth:bootstrap",
+    "auth:smoke": "pnpm --filter @grounddesk/api auth:smoke",
     "env:check": "pnpm --filter @grounddesk/api env:check"
   },
   "devDependencies": {

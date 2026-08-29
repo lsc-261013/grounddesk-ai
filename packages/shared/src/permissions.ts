@@ -32,3 +32,6 @@ const ROLE_PERMISSIONS: Readonly<Record<WorkspaceRole, ReadonlySet<Permission>>>
 
 export const hasPermission = (role: WorkspaceRole, permission: Permission): boolean =>
   ROLE_PERMISSIONS[role].has(permission)
+
+export const getPermissionsForRole = (role: WorkspaceRole): readonly Permission[] =>
+  PERMISSIONS.filter((permission) => ROLE_PERMISSIONS[role].has(permission))

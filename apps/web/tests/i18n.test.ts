@@ -15,4 +15,14 @@ describe('locale persistence', () => {
     expect(window.localStorage.getItem('grounddesk-locale')).toBe('en-US')
     expect(document.documentElement.lang).toBe('en-US')
   })
+
+  it('compiles authentication messages in both locales', async () => {
+    const { i18n } = await import('../src/i18n')
+
+    i18n.global.locale.value = 'zh-CN'
+    expect(i18n.global.t('auth.emailPlaceholder')).toBe('name@example.com')
+
+    i18n.global.locale.value = 'en-US'
+    expect(i18n.global.t('auth.emailPlaceholder')).toBe('name@example.com')
+  })
 })

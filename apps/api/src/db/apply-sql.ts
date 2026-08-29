@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { readdir, readFile } from 'node:fs/promises'
+import { basename, resolve } from 'node:path'
 
 import postgres from 'postgres'
 import { z } from 'zod'
@@ -9,13 +9,10 @@ import { env } from '../config/env.js'
 
 const actionSchema = z.enum(['migrate', 'seed'])
 const action = actionSchema.parse(process.argv[2])
-const MIGRATION_VERSION = '202608290001_initial_schema'
-
+const INITIAL_MIGRATION_VERSION = '202608290001_initial_schema'
 const repositoryRoot = resolve(process.cwd(), '../..')
-const sqlPath =
-  action === 'migrate'
-    ? resolve(repositoryRoot, 'supabase/migrations/202608290001_initial_schema.sql')
-    : resolve(repositoryRoot, 'supabase/seed/001_demo_workspace.sql')
+const migrationsDirectory = resolve(repositoryRoot, 'supabase/migrations')
+const seedPath = resolve(repositoryRoot, 'supabase/seed/001_demo_workspace.sql')
 
 if (!env.SUPABASE_DB_URL) {
   process.stderr.write('SUPABASE_DB_URL is required to apply database changes.\n')
@@ -30,11 +27,11 @@ if (!env.SUPABASE_DB_URL) {
   })
 
   try {
-    const sql = await readFile(sqlPath, 'utf8')
-
-    if (action === 'migrate') {
-      const checksum = createHash('sha256').update(sql).digest('hex')
-
+    if (action === 'seed') {
+      const seedSql = await readFile(seedPath, 'utf8')
+      await database.unsafe(seedSql, [], { prepare: false })
+      process.stdout.write('GroundDesk database seed completed successfully.\n')
+    } else {
       await database.unsafe(
         `
           create schema if not exists grounddesk_internal;
@@ -50,55 +47,65 @@ if (!env.SUPABASE_DB_URL) {
         { prepare: false },
       )
 
-      const appliedMigrations = await database<{ checksum: string }[]>`
-        select checksum
-        from grounddesk_internal.schema_migrations
-        where version = ${MIGRATION_VERSION}
-      `
-      const appliedMigration = appliedMigrations[0]
+      const migrationFiles = (await readdir(migrationsDirectory))
+        .filter((fileName) => fileName.endsWith('.sql'))
+        .sort((left, right) => left.localeCompare(right))
 
-      if (appliedMigration) {
-        if (appliedMigration.checksum !== checksum) {
-          throw new Error(
-            `Migration ${MIGRATION_VERSION} was modified after it was applied; create a new migration instead`,
-          )
+      for (const migrationFile of migrationFiles) {
+        const migrationPath = resolve(migrationsDirectory, migrationFile)
+        const version = basename(migrationFile, '.sql')
+        const migrationSql = await readFile(migrationPath, 'utf8')
+        const checksum = createHash('sha256').update(migrationSql).digest('hex')
+        const appliedMigrations = await database<{ checksum: string }[]>`
+          select checksum
+          from grounddesk_internal.schema_migrations
+          where version = ${version}
+        `
+        const appliedMigration = appliedMigrations[0]
+
+        if (appliedMigration) {
+          if (appliedMigration.checksum !== checksum) {
+            throw new Error(
+              `Migration ${version} was modified after it was applied; create a new migration instead`,
+            )
+          }
+
+          process.stdout.write(`GroundDesk migration ${version} is already applied.\n`)
+          continue
         }
 
-        process.stdout.write(`GroundDesk migration ${MIGRATION_VERSION} is already applied.\n`)
-      } else {
-        const existingSchemas = await database<{ complete: boolean }[]>`
-          select (
-            to_regclass('public.workspaces') is not null
-            and to_regclass('public.knowledge_chunks') is not null
-            and to_regclass('public.orders') is not null
-            and to_regclass('public.tickets') is not null
-            and exists (
-              select 1
-              from pg_proc procedure
-              join pg_namespace namespace on namespace.oid = procedure.pronamespace
-              where namespace.nspname = 'public'
-                and procedure.proname = 'match_hybrid_chunks'
-            )
-          ) as complete
-        `
+        if (version === INITIAL_MIGRATION_VERSION) {
+          const existingSchemas = await database<{ complete: boolean }[]>`
+            select (
+              to_regclass('public.workspaces') is not null
+              and to_regclass('public.knowledge_chunks') is not null
+              and to_regclass('public.orders') is not null
+              and to_regclass('public.tickets') is not null
+              and exists (
+                select 1
+                from pg_proc procedure
+                join pg_namespace namespace on namespace.oid = procedure.pronamespace
+                where namespace.nspname = 'public'
+                  and procedure.proname = 'match_hybrid_chunks'
+              )
+            ) as complete
+          `
 
-        if (existingSchemas[0]?.complete) {
-          process.stdout.write(
-            `Adopting previously applied GroundDesk migration ${MIGRATION_VERSION}.\n`,
-          )
+          if (existingSchemas[0]?.complete) {
+            process.stdout.write(`Adopting previously applied GroundDesk migration ${version}.\n`)
+          } else {
+            await database.unsafe(migrationSql, [], { prepare: false })
+          }
         } else {
-          await database.unsafe(sql, [], { prepare: false })
+          await database.unsafe(migrationSql, [], { prepare: false })
         }
 
         await database`
           insert into grounddesk_internal.schema_migrations (version, checksum)
-          values (${MIGRATION_VERSION}, ${checksum})
+          values (${version}, ${checksum})
         `
-        process.stdout.write(`GroundDesk database migration completed successfully.\n`)
+        process.stdout.write(`GroundDesk migration ${version} completed successfully.\n`)
       }
-    } else {
-      await database.unsafe(sql, [], { prepare: false })
-      process.stdout.write(`GroundDesk database seed completed successfully.\n`)
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown database error'

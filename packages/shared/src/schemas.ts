@@ -52,6 +52,31 @@ export const workspaceSchema = z.object({
   isDemo: z.boolean(),
 })
 
+export const profileSchema = z.object({
+  id: z.uuid(),
+  displayName: z.string().min(1).max(80),
+  avatarUrl: z.url().nullable(),
+  locale: localeSchema,
+})
+
+export const workspaceMembershipSchema = z.object({
+  workspace: workspaceSchema,
+  role: workspaceRoleSchema,
+})
+
+export const authSessionResponseSchema = z.object({
+  user: z.object({
+    id: z.uuid(),
+    email: z.email().nullable(),
+  }),
+  profile: profileSchema,
+  memberships: z.array(workspaceMembershipSchema),
+})
+
+export const workspaceAccessResponseSchema = workspaceMembershipSchema.extend({
+  permissions: z.array(z.string()),
+})
+
 export type Locale = z.infer<typeof localeSchema>
 export type WorkspaceRole = z.infer<typeof workspaceRoleSchema>
 export type DocumentStatus = z.infer<typeof documentStatusSchema>
@@ -63,3 +88,7 @@ export type HealthResponse = z.infer<typeof healthResponseSchema>
 export type OrderLookupInput = z.infer<typeof orderLookupInputSchema>
 export type ReturnEligibilityInput = z.infer<typeof returnEligibilityInputSchema>
 export type Workspace = z.infer<typeof workspaceSchema>
+export type Profile = z.infer<typeof profileSchema>
+export type WorkspaceMembership = z.infer<typeof workspaceMembershipSchema>
+export type AuthSessionResponse = z.infer<typeof authSessionResponseSchema>
+export type WorkspaceAccessResponse = z.infer<typeof workspaceAccessResponseSchema>

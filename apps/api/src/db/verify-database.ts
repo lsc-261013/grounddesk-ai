@@ -17,7 +17,7 @@ interface DatabaseInfrastructure {
   vectorIndexExists: boolean
   rlsTableCount: number
   rlsEnabledCount: number
-  migrationRecorded: boolean
+  migrationCount: number
 }
 
 interface DemoCases {
@@ -114,11 +114,14 @@ if (!env.SUPABASE_DB_URL) {
               'daily_demo_usage', 'eval_cases', 'eval_runs', 'eval_results', 'audit_logs'
             )
         ) as "rlsEnabledCount",
-        exists (
-          select 1
+        (
+          select count(*)::integer
           from grounddesk_internal.schema_migrations
-          where version = '202608290001_initial_schema'
-        ) as "migrationRecorded"
+          where version in (
+            '202608290001_initial_schema',
+            '202608290002_auth_boundaries'
+          )
+        ) as "migrationCount"
     `
 
     const demoCases = await database<DemoCases[]>`
@@ -167,7 +170,7 @@ if (!env.SUPABASE_DB_URL) {
       rlsCoverage:
         infrastructureResult.rlsTableCount === 25 &&
         infrastructureResult.rlsEnabledCount === infrastructureResult.rlsTableCount,
-      migrationRecorded: infrastructureResult.migrationRecorded,
+      migrationsRecorded: infrastructureResult.migrationCount === 2,
       demoLookup: demoResult.lookupOrderExists,
       returnWindowCases:
         demoResult.withinReturnWindowExists && demoResult.outsideReturnWindowExists,

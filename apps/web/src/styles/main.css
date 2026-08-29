@@ -69,6 +69,17 @@ a:focus-visible {
   align-items: center;
 }
 
+.access-link {
+  padding: 7px 2px;
+  color: #bfc6d1;
+  font-size: 12px;
+  transition: color 160ms ease;
+}
+
+.access-link:hover {
+  color: #39e6a3;
+}
+
 .brand {
   gap: 10px;
   color: #f4f6f8;

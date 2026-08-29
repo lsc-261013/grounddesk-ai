@@ -3,6 +3,11 @@ export const DEMO_WORKSPACE_SLUG = 'northstar-audio-demo'
 export const EMBEDDING_VECTOR_DIMENSION = 1024
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 export const MAX_WORKSPACE_DOCUMENTS = 20
+export const DEMO_WORKSPACE_ID = '11111111-1111-4111-8111-111111111111'
+export const DEMO_ADMIN_EMAIL = 'admin@demo.grounddesk.app'
+export const DEMO_AGENT_EMAIL = 'agent@demo.grounddesk.app'
+// This is an intentionally public credential for resettable simulated accounts, not a secret.
+export const DEMO_LOGIN_PASSWORD = 'GroundDesk!Demo2026'
 
 export const SUPPORTED_LOCALES = ['zh-CN', 'en-US'] as const
 export const WORKSPACE_ROLES = ['admin', 'agent'] as const
