@@ -10,7 +10,7 @@ export const registerHealthRoute = (app: FastifyInstance, environment: ApiEnv): 
     timestamp: new Date().toISOString(),
     providers: {
       database:
-        environment.SUPABASE_URL && environment.SUPABASE_SERVICE_ROLE_KEY
+        environment.SUPABASE_URL && environment.SUPABASE_SECRET_KEY
           ? ('configured' as const)
           : ('unconfigured' as const),
       generation: environment.DEEPSEEK_API_KEY

@@ -33,8 +33,8 @@ Demo Seed 生成明确标记为模拟数据的 Avenlo 商品、政策和订单�
 
 ### 面试时 30 秒解释
 
-“我先把 GroundDesk 建成 Workspace 隔离的 Monorepo。数据库用 Supabase PostgreSQL 和 pgvector，向量配置单独版本化，避免换模型后混用。检索基线是向量与全文召回后做 RRF，浏览器不接触 Service Role 或模型密钥。”
+“我先把 GroundDesk 建成 Workspace 隔离的 Monorepo。数据库用 Supabase PostgreSQL 和 pgvector，向量配置单独版本化，避免换模型后混用。检索基线是向量与全文召回后做 RRF，浏览器不接触 Supabase Secret Key 或模型密钥。”
 
 ### 深入追问
 
-如果问为什么不能只在 SQL 上加 `workspace_id`：因为隔离需要 API 授权、Repository 查询条件与 RLS 三层共同成立。Service Role 会绕过 RLS，所以服务端代码仍要验证 JWT 成员关系并显式过滤 Workspace。
+如果问为什么不能只在 SQL 上加 `workspace_id`：因为隔离需要 API 授权、Repository 查询条件与 RLS 三层共同成立。Supabase Secret Key 会绕过 RLS，所以服务端代码仍要通过 JWKS 验证用户 JWT、检查成员关系并显式过滤 Workspace。

@@ -16,4 +16,4 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-两个命令均只从服务端环境读取连接地址，不向前端暴露。不要把数据库密码或 Service Role Key 写入仓库。
+两个命令均只从服务端环境读取连接地址，不向前端暴露。不要把数据库密码或 Supabase Secret Key 写入仓库。

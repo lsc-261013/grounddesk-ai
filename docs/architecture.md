@@ -2,7 +2,7 @@
 
 ## 当前边界
 
-GroundDesk 使用 pnpm Monorepo。浏览器只接触公开 API 和 Supabase Anon Key；所有核心业务、Service Role Key、生成模型与 Embedding Key 都留在 Fastify 服务端。当前里程碑完成了工程与数据边界，尚未声称真实外部服务已经连通。
+GroundDesk 使用 pnpm Monorepo。浏览器只接触公开 API 和 Supabase Publishable Key；所有核心业务、Supabase Secret Key、生成模型与 Embedding Key 都留在 Fastify 服务端。当前里程碑完成了工程与数据边界，尚未声称真实外部服务已经连通。
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
 - RLS 使用 `auth.uid()` 与 `workspace_members` 判断读写权限。
 - 管理员拥有关键设置写权限；客服只能读取业务上下文和处理工单。
 - 匿名聊天不直接访问数据库，由 API 做限流、会话校验和最小化返回。
-- Service Role 只存在于服务端；即使服务端使用高权限连接，Repository 仍必须显式携带 Workspace 条件。
+- Supabase Secret Key 只存在于服务端；即使服务端使用会绕过 RLS 的高权限连接，Repository 仍必须显式携带 Workspace 条件。
 
 ## Embedding 版本边界
 
