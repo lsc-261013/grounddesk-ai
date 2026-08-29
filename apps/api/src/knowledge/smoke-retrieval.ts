@@ -62,6 +62,8 @@ try {
         documentTitle: candidate.documentTitle,
         sectionPath: candidate.sectionPath,
         fusedScore: candidate.fusedScore,
+        vectorSimilarity: candidate.vectorSimilarity,
+        keywordScore: candidate.keywordScore,
         vectorRank: candidate.vectorRank,
         keywordRank: candidate.keywordRank,
       })),

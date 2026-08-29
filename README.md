@@ -12,6 +12,8 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 
 里程碑 3 已完成：管理员可上传 PDF、Markdown 和 TXT，系统会执行私有存储、内容去重、页码/章节感知切块、真实 SiliconFlow BGE-M3 Embedding 与 Supabase pgvector + PostgreSQL 全文混合检索。当前真实 Demo 数据包含 4 份双语文档和 26 个 Chunk；三条核心检索 Smoke Case 均命中预期来源。该小样本结果不作为最终评测准确率。
 
+里程碑 4 已完成：DeepSeek 单 Agent 会在四种受控意图中路由，服务端通过真实 SSE 发送处理阶段和回答 Token。知识回答经过相似度阈值、冲突与引用完整性校验；订单工具验证订单号与邮箱并返回脱敏只读结果；退货资格由版本化确定性规则计算。真实 Smoke Test 已通过知识引用、订单工具、退货规则和无答案人工接管四条链路。
+
 ## 本地启动
 
 ```bash
@@ -44,9 +46,10 @@ pnpm knowledge:bootstrap
 pnpm knowledge:reindex
 pnpm knowledge:smoke
 pnpm knowledge:http-smoke
+pnpm agent:smoke
 ```
 
-`knowledge:smoke` 会调用真实 Embedding 与混合检索；`knowledge:http-smoke` 还会验证登录、Workspace 权限、文档列表、切块预览、内容去重和客服写入拒绝。两者都会产生少量 SiliconFlow 请求。
+`knowledge:smoke` 会调用真实 Embedding 与混合检索；`knowledge:http-smoke` 还会验证登录、Workspace 权限、文档列表、切块预览、内容去重和客服写入拒绝。`agent:smoke` 会调用真实 DeepSeek、SiliconFlow 和 Supabase，产生少量 API 用量，并验证四条核心 Agent 路径。
 
 演示账号是公开测试资料，不用于真实业务：
 

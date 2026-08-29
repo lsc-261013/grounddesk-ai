@@ -31,6 +31,11 @@ export const router = createRouter({
           name: 'console-knowledge',
           component: () => import('./views/KnowledgeView.vue'),
         },
+        {
+          path: 'playground',
+          name: 'console-playground',
+          component: () => import('./views/PlaygroundView.vue'),
+        },
       ],
     },
   ],

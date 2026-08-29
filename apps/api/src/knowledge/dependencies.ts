@@ -35,6 +35,10 @@ class UnavailableKnowledgeService implements KnowledgeService {
     return Promise.reject(this.unavailable())
   }
 
+  searchWithTrace(): ReturnType<KnowledgeService['searchWithTrace']> {
+    return Promise.reject(this.unavailable())
+  }
+
   processNow(): ReturnType<KnowledgeService['processNow']> {
     return Promise.reject(this.unavailable())
   }

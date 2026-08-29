@@ -121,7 +121,8 @@ if (!env.SUPABASE_DB_URL) {
           where version in (
             '202608290001_initial_schema',
             '202608290002_auth_boundaries',
-            '202608290003_knowledge_storage'
+            '202608290003_knowledge_storage',
+            '202608300004_chat_evidence_signals'
           )
         ) as "migrationCount",
         exists (
@@ -179,7 +180,7 @@ if (!env.SUPABASE_DB_URL) {
       rlsCoverage:
         infrastructureResult.rlsTableCount === 25 &&
         infrastructureResult.rlsEnabledCount === infrastructureResult.rlsTableCount,
-      migrationsRecorded: infrastructureResult.migrationCount === 3,
+      migrationsRecorded: infrastructureResult.migrationCount === 4,
       privateKnowledgeBucket: infrastructureResult.knowledgeBucketExists,
       demoLookup: demoResult.lookupOrderExists,
       returnWindowCases:

@@ -13,7 +13,7 @@ flowchart LR
   API -->|getClaims 验证 JWT| Auth
   API -->|参数化查询 + Workspace 授权| Supabase[(Supabase PostgreSQL)]
   Supabase --> Vector[(pgvector 1024d)]
-  API -. 里程碑 4 .-> DeepSeek[DeepSeek Generation]
+  API --> DeepSeek[DeepSeek Generation / Tool Calling]
   API --> SiliconFlow[SiliconFlow Embedding]
   API --> Storage[Supabase Private Storage]
   API -. 里程碑 5 .-> Webhook[Signed Webhook]
@@ -50,3 +50,7 @@ flowchart LR
 - `connected`：强制要求 Supabase、DeepSeek 和 SiliconFlow 环境变量，供真实 RAG 与公开 Demo 使用。
 
 这两个模式不会让公开 Demo 使用假 AI；离线模式仅用于本地开发和自动化测试。
+
+## 单 Agent 与流式边界
+
+Fastify 通过显式状态机编排四个允许意图，并以 POST + SSE 输出可观察事件。DeepSeek 只能选择白名单工具；参数经 Zod 校验后进入固定 Repository，模型无法执行 SQL。知识回答使用真实 Token 流，隐藏推理内容不会传给浏览器。低置信度、冲突、提示注入、工具失败与引用校验失败统一进入可靠拒答和人工工单。详见 [Agent 工作流](./agent-workflow.md)。

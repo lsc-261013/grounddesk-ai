@@ -38,9 +38,12 @@ const signOut = async (): Promise<void> => {
         <RouterLink to="/console/knowledge" :class="{ active: route.name === 'console-knowledge' }">
           <BookOpenText :size="17" />{{ t('console.knowledge') }}
         </RouterLink>
-        <span class="console-sidebar__disabled">
+        <RouterLink
+          to="/console/playground"
+          :class="{ active: route.name === 'console-playground' }"
+        >
           <MessageSquareText :size="17" />{{ t('console.conversations') }}
-        </span>
+        </RouterLink>
         <span class="console-sidebar__disabled">
           <TicketCheck :size="17" />{{ t('console.tickets') }}
         </span>

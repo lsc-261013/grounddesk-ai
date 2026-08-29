@@ -9,6 +9,7 @@ import { createIdentityDependencies } from './auth/dependencies.js'
 import { isHttpError } from './auth/errors.js'
 import './auth/request-context.js'
 import type { IdentityDependencies } from './auth/types.js'
+import { createAgentDependencies, type AgentDependencies } from './agent/dependencies.js'
 import { env, type ApiEnv } from './config/env.js'
 import {
   createKnowledgeDependencies,
@@ -17,11 +18,13 @@ import {
 import { registerAuthRoutes } from './routes/auth.js'
 import { registerHealthRoute } from './routes/health.js'
 import { registerKnowledgeRoutes } from './routes/knowledge.js'
+import { registerPublicChatRoutes } from './routes/public-chat.js'
 
 export interface BuildAppOptions {
   environment?: ApiEnv
   identityDependencies?: IdentityDependencies
   knowledgeDependencies?: KnowledgeDependencies
+  agentDependencies?: AgentDependencies
   logger?: boolean
 }
 
@@ -31,6 +34,9 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
     options.identityDependencies ?? createIdentityDependencies(environment)
   const knowledgeDependencies =
     options.knowledgeDependencies ?? createKnowledgeDependencies(environment)
+  const agentDependencies =
+    options.agentDependencies ??
+    createAgentDependencies(environment, knowledgeDependencies.knowledgeService)
   const app = Fastify({
     logger: options.logger ?? environment.NODE_ENV !== 'test',
     bodyLimit: environment.MAX_UPLOAD_BYTES,
@@ -62,10 +68,12 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   registerHealthRoute(app, environment)
   registerAuthRoutes(app, identityDependencies)
   registerKnowledgeRoutes(app, identityDependencies, knowledgeDependencies)
+  registerPublicChatRoutes(app, environment, agentDependencies)
 
   app.addHook('onClose', async () => {
     await identityDependencies.identityRepository.close()
     await knowledgeDependencies.knowledgeService.close()
+    await agentDependencies.agentService.close()
   })
 
   app.setNotFoundHandler(async (_request, reply) => {

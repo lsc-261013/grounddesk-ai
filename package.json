@@ -31,6 +31,7 @@
     "knowledge:reindex": "pnpm --filter @grounddesk/api knowledge:reindex",
     "knowledge:smoke": "pnpm --filter @grounddesk/api knowledge:smoke",
     "knowledge:http-smoke": "pnpm --filter @grounddesk/api knowledge:http-smoke",
+    "agent:smoke": "pnpm --filter @grounddesk/api agent:smoke",
     "env:check": "pnpm --filter @grounddesk/api env:check"
   },
   "devDependencies": {

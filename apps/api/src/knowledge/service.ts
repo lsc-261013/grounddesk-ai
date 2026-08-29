@@ -35,12 +35,19 @@ export interface SearchInput {
   limit: number
 }
 
+export interface KnowledgeSearchTrace {
+  evidence: RetrievalEvidence[]
+  embeddingConfigId: string
+  durationMs: number
+}
+
 export interface KnowledgeService {
   registerDocument(input: RegisterDocumentInput): Promise<StoredDocumentResult>
   retryDocument(workspaceId: string, documentId: string): Promise<KnowledgeDocument>
   listDocuments(workspaceId: string): Promise<KnowledgeDocument[]>
   listChunks(workspaceId: string, documentId: string): Promise<KnowledgeChunkPreview[]>
   search(input: SearchInput): Promise<RetrievalEvidence[]>
+  searchWithTrace(input: SearchInput): Promise<KnowledgeSearchTrace>
   processNow(workspaceId: string, documentId: string): Promise<void>
   waitForIdle(): Promise<void>
   close(): Promise<void>
@@ -179,6 +186,11 @@ export class DefaultKnowledgeService implements KnowledgeService {
   }
 
   async search(input: SearchInput): Promise<RetrievalEvidence[]> {
+    return (await this.searchWithTrace(input)).evidence
+  }
+
+  async searchWithTrace(input: SearchInput): Promise<KnowledgeSearchTrace> {
+    const startedAt = performance.now()
     const query = input.query.trim()
     if (!query) throw new KnowledgeInputError('The retrieval query must not be empty.')
 
@@ -194,7 +206,7 @@ export class DefaultKnowledgeService implements KnowledgeService {
     const [queryEmbedding] = await this.embeddings.embed([query])
     if (!queryEmbedding) throw new Error('The embedding provider returned no query vector.')
 
-    return this.repository.searchHybrid({
+    const evidence = await this.repository.searchHybrid({
       workspaceId: input.workspaceId,
       embeddingConfigId: embeddingConfig.id,
       queryEmbedding,
@@ -203,6 +215,11 @@ export class DefaultKnowledgeService implements KnowledgeService {
       productModel: input.productModel,
       resultLimit: input.limit,
     })
+    return {
+      evidence,
+      embeddingConfigId: embeddingConfig.id,
+      durationMs: Math.max(0, Math.round(performance.now() - startedAt)),
+    }
   }
 
   async processNow(workspaceId: string, documentId: string): Promise<void> {

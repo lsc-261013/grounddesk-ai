@@ -66,6 +66,8 @@ interface EvidenceRow {
   pageStart: number | null
   pageEnd: number | null
   fusedScore: number
+  vectorSimilarity: number | null
+  keywordScore: number | null
   vectorRank: number | null
   keywordRank: number | null
 }
@@ -296,6 +298,8 @@ export class PostgresKnowledgeRepository implements KnowledgeRepository {
         result.page_start as "pageStart",
         result.page_end as "pageEnd",
         result.fused_score as "fusedScore",
+        result.vector_similarity as "vectorSimilarity",
+        result.keyword_score as "keywordScore",
         result.vector_rank::integer as "vectorRank",
         result.keyword_rank::integer as "keywordRank"
       from public.match_hybrid_chunks(

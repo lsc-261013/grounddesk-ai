@@ -20,7 +20,8 @@
     "knowledge:bootstrap": "tsx src/knowledge/bootstrap-demo-knowledge.ts",
     "knowledge:reindex": "tsx src/knowledge/bootstrap-demo-knowledge.ts --reindex",
     "knowledge:smoke": "tsx src/knowledge/smoke-retrieval.ts",
-    "knowledge:http-smoke": "tsx src/knowledge/smoke-http.ts"
+    "knowledge:http-smoke": "tsx src/knowledge/smoke-http.ts",
+    "agent:smoke": "tsx src/agent/smoke-agent.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

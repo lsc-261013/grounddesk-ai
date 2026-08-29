@@ -4,12 +4,14 @@ import { resolve } from 'node:path'
 const migrationPath = resolve('supabase/migrations/202608290001_initial_schema.sql')
 const authMigrationPath = resolve('supabase/migrations/202608290002_auth_boundaries.sql')
 const storageMigrationPath = resolve('supabase/migrations/202608290003_knowledge_storage.sql')
+const chatMigrationPath = resolve('supabase/migrations/202608300004_chat_evidence_signals.sql')
 const seedPath = resolve('supabase/seed/001_demo_workspace.sql')
 
-const [migration, authMigration, storageMigration, seed] = await Promise.all([
+const [migration, authMigration, storageMigration, chatMigration, seed] = await Promise.all([
   readFile(migrationPath, 'utf8'),
   readFile(authMigrationPath, 'utf8'),
   readFile(storageMigrationPath, 'utf8'),
+  readFile(chatMigrationPath, 'utf8'),
   readFile(seedPath, 'utf8'),
 ])
 
@@ -45,10 +47,17 @@ const requiredStorageMigrationFragments = [
   "array['application/pdf', 'text/plain', 'text/markdown']",
 ]
 
+const requiredChatMigrationFragments = [
+  'conversations_anonymous_session_unique',
+  'vector_similarity double precision',
+  'keyword_score real',
+]
+
 const missingFragments = [
   ...requiredMigrationFragments.filter((fragment) => !migration.includes(fragment)),
   ...requiredAuthMigrationFragments.filter((fragment) => !authMigration.includes(fragment)),
   ...requiredStorageMigrationFragments.filter((fragment) => !storageMigration.includes(fragment)),
+  ...requiredChatMigrationFragments.filter((fragment) => !chatMigration.includes(fragment)),
   ...requiredSeedFragments.filter((fragment) => !seed.includes(fragment)),
 ]
 
@@ -72,6 +81,7 @@ process.stdout.write(
         '202608290001_initial_schema.sql',
         '202608290002_auth_boundaries.sql',
         '202608290003_knowledge_storage.sql',
+        '202608300004_chat_evidence_signals.sql',
       ],
       vectorDimensions: 1024,
       products: productInsertCount,

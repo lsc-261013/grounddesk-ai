@@ -28,3 +28,21 @@ export const AGENT_INTENTS = [
 ] as const
 export const TICKET_STATUSES = ['open', 'in_progress', 'waiting_customer', 'resolved'] as const
 export const RETURN_ELIGIBILITY_STATUSES = ['eligible', 'ineligible', 'manual_review'] as const
+export const CHAT_STAGES = [
+  'understanding',
+  'retrieving',
+  'validating',
+  'calling_tool',
+  'generating',
+  'completed',
+  'handed_off',
+] as const
+export const CHAT_STAGE_STATUSES = ['active', 'completed', 'failed'] as const
+export const TOOL_RESULT_STATUSES = ['succeeded', 'not_found', 'email_mismatch', 'failed'] as const
+export const RETURN_REASONS = [
+  'changed_mind',
+  'defective',
+  'shipping_damage',
+  'wrong_item',
+  'other',
+] as const
