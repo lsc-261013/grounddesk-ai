@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { JSONValue, Sql } from 'postgres'
 
 import {
   conversationSourceSchema,
@@ -7,6 +7,11 @@ import {
   type ConversationSource,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type {
   AgentRepository,
   ConversationRecord,
@@ -38,8 +43,8 @@ const databaseToolStatus = (
 ): 'succeeded' | 'not_found' | 'forbidden' | 'failed' =>
   status === 'email_mismatch' ? 'forbidden' : status
 
-const toJsonValue = (value: Record<string, unknown>): postgres.JSONValue =>
-  JSON.parse(JSON.stringify(value)) as postgres.JSONValue
+const toJsonValue = (value: Record<string, unknown>): JSONValue =>
+  JSON.parse(JSON.stringify(value)) as JSONValue
 
 class PostgresAgentRepository implements AgentRepository {
   constructor(private readonly database: Sql) {}
@@ -300,15 +305,14 @@ class PostgresAgentRepository implements AgentRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresAgentRepository = (databaseUrl: string): AgentRepository =>
+export const createPostgresAgentRepository = (source: DatabaseSource): AgentRepository =>
   new PostgresAgentRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 5,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-agent' },
+      applicationName: 'grounddesk-agent',
     }),
   )

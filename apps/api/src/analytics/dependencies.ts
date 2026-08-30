@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import type { ApiEnv } from '../config/env.js'
 import { ServiceUnavailableError } from '../auth/errors.js'
 import { createPostgresAnalyticsRepository } from './postgres-analytics-repository.js'
@@ -17,9 +19,12 @@ export interface AnalyticsDependencies {
   analyticsRepository: AnalyticsRepository
 }
 
-export const createAnalyticsDependencies = (environment: ApiEnv): AnalyticsDependencies => ({
+export const createAnalyticsDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): AnalyticsDependencies => ({
   analyticsRepository:
     environment.RUNTIME_MODE === 'connected' && environment.SUPABASE_DB_URL
-      ? createPostgresAnalyticsRepository(environment.SUPABASE_DB_URL)
+      ? createPostgresAnalyticsRepository(database ?? environment.SUPABASE_DB_URL)
       : new UnavailableAnalyticsRepository(),
 })

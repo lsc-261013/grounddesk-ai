@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import { ServiceUnavailableError } from '../auth/errors.js'
 import type { ApiEnv } from '../config/env.js'
 import { DeepSeekGenerationProvider } from '../generation/deepseek-provider.js'
@@ -44,6 +46,7 @@ class UnavailableAgentService implements AgentService {
 export const createAgentDependencies = (
   environment: ApiEnv,
   knowledgeService: KnowledgeService,
+  database?: Sql,
 ): AgentDependencies => {
   if (
     environment.RUNTIME_MODE !== 'connected' ||
@@ -53,8 +56,9 @@ export const createAgentDependencies = (
     return { agentService: new UnavailableAgentService() }
   }
 
-  const agentRepository = createPostgresAgentRepository(environment.SUPABASE_DB_URL)
-  const toolRepository = createPostgresToolRepository(environment.SUPABASE_DB_URL)
+  const databaseSource = database ?? environment.SUPABASE_DB_URL
+  const agentRepository = createPostgresAgentRepository(databaseSource)
+  const toolRepository = createPostgresToolRepository(databaseSource)
   const tools = new DefaultToolExecutionService(toolRepository)
   const generation = new DeepSeekGenerationProvider(
     environment.DEEPSEEK_MODEL,

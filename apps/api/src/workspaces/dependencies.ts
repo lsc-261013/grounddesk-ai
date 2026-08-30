@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import type { ApiEnv } from '../config/env.js'
 import { createPostgresWorkspaceRepository } from './postgres-workspace-repository.js'
 import type { WorkspaceRepository } from './repository.js'
@@ -36,9 +38,12 @@ export interface WorkspaceDependencies {
   workspaceRepository: WorkspaceRepository
 }
 
-export const createWorkspaceDependencies = (environment: ApiEnv): WorkspaceDependencies => ({
+export const createWorkspaceDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): WorkspaceDependencies => ({
   workspaceRepository:
     environment.RUNTIME_MODE === 'connected' && environment.SUPABASE_DB_URL
-      ? createPostgresWorkspaceRepository(environment.SUPABASE_DB_URL)
+      ? createPostgresWorkspaceRepository(database ?? environment.SUPABASE_DB_URL)
       : new UnavailableWorkspaceRepository(),
 })

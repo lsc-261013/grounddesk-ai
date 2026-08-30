@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import {
   chatCitationSchema,
@@ -11,6 +11,11 @@ import {
   type TicketToolTrace,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type {
   ConversationAccess,
   ConversationListResult,
@@ -195,15 +200,16 @@ export class PostgresConversationRepository implements ConversationRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresConversationRepository = (databaseUrl: string): ConversationRepository =>
+export const createPostgresConversationRepository = (
+  source: DatabaseSource,
+): ConversationRepository =>
   new PostgresConversationRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 4,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-conversations' },
+      applicationName: 'grounddesk-conversations',
     }),
   )

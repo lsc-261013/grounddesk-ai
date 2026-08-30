@@ -1,7 +1,12 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import { overviewMetricsSchema, type OverviewMetrics } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type { AnalyticsRepository } from './repository.js'
 
 interface MetricsRow {
@@ -122,15 +127,14 @@ export class PostgresAnalyticsRepository implements AnalyticsRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresAnalyticsRepository = (databaseUrl: string): AnalyticsRepository =>
+export const createPostgresAnalyticsRepository = (source: DatabaseSource): AnalyticsRepository =>
   new PostgresAnalyticsRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 3,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-analytics' },
+      applicationName: 'grounddesk-analytics',
     }),
   )

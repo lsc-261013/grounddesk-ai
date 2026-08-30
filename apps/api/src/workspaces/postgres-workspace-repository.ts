@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import {
   workspaceMemberSchema,
@@ -11,6 +11,11 @@ import {
   type WorkspaceSettings,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type { WorkspaceRepository } from './repository.js'
 
 interface SettingsRow {
@@ -234,15 +239,14 @@ export class PostgresWorkspaceRepository implements WorkspaceRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresWorkspaceRepository = (databaseUrl: string): WorkspaceRepository =>
+export const createPostgresWorkspaceRepository = (source: DatabaseSource): WorkspaceRepository =>
   new PostgresWorkspaceRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 4,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-workspaces' },
+      applicationName: 'grounddesk-workspaces',
     }),
   )

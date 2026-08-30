@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import { ServiceUnavailableError } from '../auth/errors.js'
 import type { ApiEnv } from '../config/env.js'
 import { createPostgresWebhookRepository } from './postgres-webhook-repository.js'
@@ -35,7 +37,10 @@ class UnavailableWebhookService implements WebhookService {
   }
 }
 
-export const createWebhookDependencies = (environment: ApiEnv): WebhookDependencies => {
+export const createWebhookDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): WebhookDependencies => {
   if (
     environment.RUNTIME_MODE !== 'connected' ||
     !environment.SUPABASE_DB_URL ||
@@ -44,7 +49,7 @@ export const createWebhookDependencies = (environment: ApiEnv): WebhookDependenc
     return { webhookService: new UnavailableWebhookService() }
   }
   const webhookService = new DefaultWebhookService(
-    createPostgresWebhookRepository(environment.SUPABASE_DB_URL),
+    createPostgresWebhookRepository(database ?? environment.SUPABASE_DB_URL),
     environment.SUPABASE_SECRET_KEY,
     {
       timeoutMs: environment.WEBHOOK_TIMEOUT_MS,

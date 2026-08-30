@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import type { ApiEnv } from '../config/env.js'
 import { ServiceUnavailableError } from './errors.js'
 import { createPostgresIdentityRepository } from './postgres-identity-repository.js'
@@ -42,7 +44,10 @@ class UnavailableIdentityRepository implements IdentityRepository {
   }
 }
 
-export const createIdentityDependencies = (environment: ApiEnv): IdentityDependencies => {
+export const createIdentityDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): IdentityDependencies => {
   if (
     environment.RUNTIME_MODE !== 'connected' ||
     !environment.SUPABASE_URL ||
@@ -60,6 +65,6 @@ export const createIdentityDependencies = (environment: ApiEnv): IdentityDepende
       environment.SUPABASE_URL,
       environment.SUPABASE_PUBLISHABLE_KEY,
     ),
-    identityRepository: createPostgresIdentityRepository(environment.SUPABASE_DB_URL),
+    identityRepository: createPostgresIdentityRepository(database ?? environment.SUPABASE_DB_URL),
   }
 }

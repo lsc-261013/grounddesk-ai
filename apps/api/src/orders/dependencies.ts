@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import type { ApiEnv } from '../config/env.js'
 import { createPostgresOrderRepository } from './postgres-order-repository.js'
 import type { OrderListResult, OrderRepository } from './repository.js'
@@ -21,9 +23,12 @@ export interface OrderDependencies {
   orderRepository: OrderRepository
 }
 
-export const createOrderDependencies = (environment: ApiEnv): OrderDependencies => ({
+export const createOrderDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): OrderDependencies => ({
   orderRepository:
     environment.RUNTIME_MODE === 'connected' && environment.SUPABASE_DB_URL
-      ? createPostgresOrderRepository(environment.SUPABASE_DB_URL)
+      ? createPostgresOrderRepository(database ?? environment.SUPABASE_DB_URL)
       : new UnavailableOrderRepository(),
 })

@@ -1,7 +1,12 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import { publicProductSchema, type PublicProduct } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type { CatalogRepository } from './repository.js'
 
 interface ProductRow {
@@ -41,15 +46,14 @@ export class PostgresCatalogRepository implements CatalogRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresCatalogRepository = (databaseUrl: string): CatalogRepository =>
+export const createPostgresCatalogRepository = (source: DatabaseSource): CatalogRepository =>
   new PostgresCatalogRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 3,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-catalog' },
+      applicationName: 'grounddesk-catalog',
     }),
   )

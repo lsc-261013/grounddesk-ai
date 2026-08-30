@@ -79,6 +79,7 @@ const signOut = async (): Promise<void> => {
           <TicketCheck :size="17" />{{ t('console.tickets') }}
         </RouterLink>
         <RouterLink
+          v-if="isAdmin"
           to="/console/evaluations"
           :class="{ active: route.name === 'console-evaluations' }"
         >

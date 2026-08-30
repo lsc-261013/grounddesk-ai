@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import { ServiceUnavailableError } from '../auth/errors.js'
 import type { AgentService } from '../agent/service.js'
 import type { ApiEnv } from '../config/env.js'
@@ -39,11 +41,12 @@ class UnavailableEvaluationService implements EvaluationService {
 export const createEvaluationDependencies = (
   environment: ApiEnv,
   agentService: AgentService,
+  database?: Sql,
 ): EvaluationDependencies => {
   if (environment.RUNTIME_MODE !== 'connected' || !environment.SUPABASE_DB_URL) {
     return { evaluationService: new UnavailableEvaluationService() }
   }
-  const repository = createPostgresEvaluationRepository(environment.SUPABASE_DB_URL)
+  const repository = createPostgresEvaluationRepository(database ?? environment.SUPABASE_DB_URL)
   return {
     evaluationService: new DefaultEvaluationService(
       repository,

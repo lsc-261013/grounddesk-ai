@@ -59,6 +59,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (!listenerRegistered) {
         client.auth.onAuthStateChange((_event, nextSession) => {
+          if (nextSession?.access_token === providerSession.value?.access_token && session.value) {
+            return
+          }
           void applyProviderSession(nextSession).catch((cause: unknown) => {
             error.value = cause instanceof Error ? cause.message : 'Session synchronization failed.'
           })

@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { JSONValue, Sql } from 'postgres'
 
 import {
   evaluationCaseSchema,
@@ -13,6 +13,11 @@ import {
   type PublicEvaluationSummary,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type { EvaluationRepository, IsolationProbeInput } from './repository.js'
 
 interface CaseRow {
@@ -53,8 +58,8 @@ const asRecord = (value: unknown): Record<string, unknown> =>
     ? (value as Record<string, unknown>)
     : {}
 
-const jsonValue = (value: Record<string, unknown>): postgres.JSONValue =>
-  JSON.parse(JSON.stringify(value)) as postgres.JSONValue
+const jsonValue = (value: Record<string, unknown>): JSONValue =>
+  JSON.parse(JSON.stringify(value)) as JSONValue
 
 const mapCase = (row: CaseRow): EvaluationCase =>
   evaluationCaseSchema.parse({
@@ -241,15 +246,14 @@ export class PostgresEvaluationRepository implements EvaluationRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresEvaluationRepository = (databaseUrl: string): EvaluationRepository =>
+export const createPostgresEvaluationRepository = (source: DatabaseSource): EvaluationRepository =>
   new PostgresEvaluationRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 3,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-evaluations' },
+      applicationName: 'grounddesk-evaluations',
     }),
   )

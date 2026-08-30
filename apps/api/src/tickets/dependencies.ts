@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import { ServiceUnavailableError } from '../auth/errors.js'
 import type { ApiEnv } from '../config/env.js'
 import { createPostgresTicketRepository } from './postgres-ticket-repository.js'
@@ -35,13 +37,16 @@ class UnavailableTicketService implements TicketService {
   }
 }
 
-export const createTicketDependencies = (environment: ApiEnv): TicketDependencies => {
+export const createTicketDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): TicketDependencies => {
   if (environment.RUNTIME_MODE !== 'connected' || !environment.SUPABASE_DB_URL) {
     return { ticketService: new UnavailableTicketService() }
   }
   return {
     ticketService: new DefaultTicketService(
-      createPostgresTicketRepository(environment.SUPABASE_DB_URL),
+      createPostgresTicketRepository(database ?? environment.SUPABASE_DB_URL),
     ),
   }
 }

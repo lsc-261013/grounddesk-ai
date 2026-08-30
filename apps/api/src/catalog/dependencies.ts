@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import { ServiceUnavailableError } from '../auth/errors.js'
 import type { ApiEnv } from '../config/env.js'
 import { createPostgresCatalogRepository } from './postgres-catalog-repository.js'
@@ -17,9 +19,12 @@ export interface CatalogDependencies {
   catalogRepository: CatalogRepository
 }
 
-export const createCatalogDependencies = (environment: ApiEnv): CatalogDependencies => ({
+export const createCatalogDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): CatalogDependencies => ({
   catalogRepository:
     environment.RUNTIME_MODE === 'connected' && environment.SUPABASE_DB_URL
-      ? createPostgresCatalogRepository(environment.SUPABASE_DB_URL)
+      ? createPostgresCatalogRepository(database ?? environment.SUPABASE_DB_URL)
       : new UnavailableCatalogRepository(),
 })

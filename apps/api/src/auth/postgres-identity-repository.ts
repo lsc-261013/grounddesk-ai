@@ -1,7 +1,12 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import { localeSchema, workspaceRoleSchema, type WorkspaceMembership } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type { IdentityProfile, IdentityRepository } from './types.js'
 
 interface ProfileRow {
@@ -91,15 +96,14 @@ export class PostgresIdentityRepository implements IdentityRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresIdentityRepository = (databaseUrl: string): IdentityRepository =>
+export const createPostgresIdentityRepository = (source: DatabaseSource): IdentityRepository =>
   new PostgresIdentityRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 5,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-api' },
+      applicationName: 'grounddesk-api',
     }),
   )

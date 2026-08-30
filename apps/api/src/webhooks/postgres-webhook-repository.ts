@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { JSONValue, Sql } from 'postgres'
 
 import {
   webhookDeliverySchema,
@@ -9,6 +9,11 @@ import {
   type WebhookEndpoint,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type {
   ClaimedWebhookDelivery,
   CreateWebhookEndpointInput,
@@ -169,7 +174,7 @@ export class PostgresWebhookRepository implements WebhookRepository {
   }
 
   async enqueueTest(workspaceId: string, endpointId: string): Promise<string | null> {
-    const payload: postgres.JSONValue = {
+    const payload: JSONValue = {
       type: 'webhook.test',
       workspaceId,
       occurredAt: new Date().toISOString(),
@@ -264,15 +269,14 @@ export class PostgresWebhookRepository implements WebhookRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresWebhookRepository = (databaseUrl: string): WebhookRepository =>
+export const createPostgresWebhookRepository = (source: DatabaseSource): WebhookRepository =>
   new PostgresWebhookRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 3,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-webhooks' },
+      applicationName: 'grounddesk-webhooks',
     }),
   )

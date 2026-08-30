@@ -1,8 +1,13 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 import { z } from 'zod'
 
 import { orderStatusSchema } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type {
   OrderToolRepository,
   ReturnPolicyRecord,
@@ -152,15 +157,14 @@ class PostgresToolRepository implements OrderToolRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresToolRepository = (databaseUrl: string): OrderToolRepository =>
+export const createPostgresToolRepository = (source: DatabaseSource): OrderToolRepository =>
   new PostgresToolRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 5,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-tools' },
+      applicationName: 'grounddesk-tools',
     }),
   )

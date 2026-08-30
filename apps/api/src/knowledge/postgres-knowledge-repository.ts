@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import {
   documentKindSchema,
@@ -11,6 +11,11 @@ import {
   type RetrievalEvidence,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type {
   CreateDocumentInput,
   EmbeddingConfigRecord,
@@ -319,15 +324,14 @@ export class PostgresKnowledgeRepository implements KnowledgeRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresKnowledgeRepository = (databaseUrl: string): KnowledgeRepository =>
+export const createPostgresKnowledgeRepository = (source: DatabaseSource): KnowledgeRepository =>
   new PostgresKnowledgeRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 5,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-knowledge' },
+      applicationName: 'grounddesk-knowledge',
     }),
   )

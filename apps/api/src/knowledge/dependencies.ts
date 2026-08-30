@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import type { ApiEnv } from '../config/env.js'
 import { ServiceUnavailableError } from '../auth/errors.js'
 import { SiliconFlowEmbeddingProvider } from './embedding-provider.js'
@@ -52,7 +54,10 @@ class UnavailableKnowledgeService implements KnowledgeService {
   }
 }
 
-export const createKnowledgeDependencies = (environment: ApiEnv): KnowledgeDependencies => {
+export const createKnowledgeDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): KnowledgeDependencies => {
   if (
     environment.RUNTIME_MODE !== 'connected' ||
     !environment.SUPABASE_URL ||
@@ -64,7 +69,7 @@ export const createKnowledgeDependencies = (environment: ApiEnv): KnowledgeDepen
   }
 
   const repository: KnowledgeRepository = createPostgresKnowledgeRepository(
-    environment.SUPABASE_DB_URL,
+    database ?? environment.SUPABASE_DB_URL,
   )
   const storage = createSupabaseKnowledgeStorage(
     environment.SUPABASE_URL,

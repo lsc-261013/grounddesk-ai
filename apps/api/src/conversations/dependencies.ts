@@ -1,3 +1,5 @@
+import type { Sql } from 'postgres'
+
 import type { ApiEnv } from '../config/env.js'
 import { createPostgresConversationRepository } from './postgres-conversation-repository.js'
 import type { ConversationListResult, ConversationRepository } from './repository.js'
@@ -18,9 +20,12 @@ export interface ConversationDependencies {
   conversationRepository: ConversationRepository
 }
 
-export const createConversationDependencies = (environment: ApiEnv): ConversationDependencies => ({
+export const createConversationDependencies = (
+  environment: ApiEnv,
+  database?: Sql,
+): ConversationDependencies => ({
   conversationRepository:
     environment.RUNTIME_MODE === 'connected' && environment.SUPABASE_DB_URL
-      ? createPostgresConversationRepository(environment.SUPABASE_DB_URL)
+      ? createPostgresConversationRepository(database ?? environment.SUPABASE_DB_URL)
       : new UnavailableConversationRepository(),
 })

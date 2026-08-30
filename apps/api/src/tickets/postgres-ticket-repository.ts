@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres'
+import type { Sql } from 'postgres'
 
 import {
   agentIntentSchema,
@@ -17,6 +17,11 @@ import {
   type TicketSummary,
 } from '@grounddesk/shared'
 
+import {
+  closeRepositoryDatabase,
+  createRepositoryDatabase,
+  type DatabaseSource,
+} from '../db/client.js'
 import type { TicketAccess, TicketAssignmentUpdate, TicketRepository } from './repository.js'
 
 interface TicketRow {
@@ -349,15 +354,14 @@ export class PostgresTicketRepository implements TicketRepository {
   }
 
   async close(): Promise<void> {
-    await this.database.end({ timeout: 5 })
+    await closeRepositoryDatabase(this.database)
   }
 }
 
-export const createPostgresTicketRepository = (databaseUrl: string): TicketRepository =>
+export const createPostgresTicketRepository = (source: DatabaseSource): TicketRepository =>
   new PostgresTicketRepository(
-    postgres(databaseUrl, {
+    createRepositoryDatabase(source, {
       max: 5,
-      ssl: 'require',
-      connection: { application_name: 'grounddesk-tickets' },
+      applicationName: 'grounddesk-tickets',
     }),
   )

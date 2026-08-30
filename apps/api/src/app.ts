@@ -16,6 +16,7 @@ import type { IdentityDependencies } from './auth/types.js'
 import { createAgentDependencies, type AgentDependencies } from './agent/dependencies.js'
 import { createCatalogDependencies, type CatalogDependencies } from './catalog/dependencies.js'
 import { env, type ApiEnv } from './config/env.js'
+import { createDatabaseClient } from './db/client.js'
 import {
   createConversationDependencies,
   type ConversationDependencies,
@@ -67,26 +68,39 @@ export interface BuildAppOptions {
 
 export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyInstance> => {
   const environment = options.environment ?? env
+  const database =
+    environment.RUNTIME_MODE === 'connected' && environment.SUPABASE_DB_URL
+      ? createDatabaseClient(environment.SUPABASE_DB_URL)
+      : null
   const identityDependencies =
-    options.identityDependencies ?? createIdentityDependencies(environment)
+    options.identityDependencies ?? createIdentityDependencies(environment, database ?? undefined)
   const knowledgeDependencies =
-    options.knowledgeDependencies ?? createKnowledgeDependencies(environment)
+    options.knowledgeDependencies ?? createKnowledgeDependencies(environment, database ?? undefined)
   const agentDependencies =
     options.agentDependencies ??
-    createAgentDependencies(environment, knowledgeDependencies.knowledgeService)
-  const ticketDependencies = options.ticketDependencies ?? createTicketDependencies(environment)
-  const webhookDependencies = options.webhookDependencies ?? createWebhookDependencies(environment)
+    createAgentDependencies(
+      environment,
+      knowledgeDependencies.knowledgeService,
+      database ?? undefined,
+    )
+  const ticketDependencies =
+    options.ticketDependencies ?? createTicketDependencies(environment, database ?? undefined)
+  const webhookDependencies =
+    options.webhookDependencies ?? createWebhookDependencies(environment, database ?? undefined)
   const evaluationDependencies =
     options.evaluationDependencies ??
-    createEvaluationDependencies(environment, agentDependencies.agentService)
+    createEvaluationDependencies(environment, agentDependencies.agentService, database ?? undefined)
   const analyticsDependencies =
-    options.analyticsDependencies ?? createAnalyticsDependencies(environment)
-  const catalogDependencies = options.catalogDependencies ?? createCatalogDependencies(environment)
+    options.analyticsDependencies ?? createAnalyticsDependencies(environment, database ?? undefined)
+  const catalogDependencies =
+    options.catalogDependencies ?? createCatalogDependencies(environment, database ?? undefined)
   const conversationDependencies =
-    options.conversationDependencies ?? createConversationDependencies(environment)
-  const orderDependencies = options.orderDependencies ?? createOrderDependencies(environment)
+    options.conversationDependencies ??
+    createConversationDependencies(environment, database ?? undefined)
+  const orderDependencies =
+    options.orderDependencies ?? createOrderDependencies(environment, database ?? undefined)
   const workspaceDependencies =
-    options.workspaceDependencies ?? createWorkspaceDependencies(environment)
+    options.workspaceDependencies ?? createWorkspaceDependencies(environment, database ?? undefined)
   const app = Fastify({
     logger: options.logger ?? environment.NODE_ENV !== 'test',
     bodyLimit: environment.MAX_UPLOAD_BYTES,
@@ -141,6 +155,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
     await agentDependencies.agentService.close()
     await knowledgeDependencies.knowledgeService.close()
     await identityDependencies.identityRepository.close()
+    await database?.end({ timeout: 5 })
   })
 
   app.setNotFoundHandler(async (_request, reply) => {
