@@ -159,3 +159,28 @@ test('live demo cites knowledge, calls tools, and completes human handoff', asyn
     .selectOption('resolved')
   await expect(page.getByPlaceholder('输入给顾客的人工回复…', { exact: true })).toHaveCount(0)
 })
+
+test('administrator can reset the Demo Workspace to its baseline', async ({ page }) => {
+  test.skip(
+    process.env.E2E_RESET_DEMO !== 'true',
+    'Run explicitly because this clears Demo operations and evaluation runs.',
+  )
+
+  await login(page, ADMIN_EMAIL)
+  await page.goto('/console/settings')
+  await page.getByLabel('输入 RESET 确认仅重置模拟数据', { exact: true }).fill('RESET')
+  await page.getByRole('button', { name: '重置 Demo', exact: true }).click()
+  await expect(page.getByRole('button', { name: '重置完成', exact: true })).toBeVisible({
+    timeout: 15_000,
+  })
+
+  await page.goto('/console/products')
+  await expect(page.locator('.product-admin-card')).toHaveCount(8)
+  await expect(page.locator('.product-admin-card.archived')).toHaveCount(0)
+
+  await page.goto('/console/orders')
+  await expect(page.locator('.order-record')).toHaveCount(30)
+
+  await page.goto('/console/tickets')
+  await expect(page.getByText('当前筛选条件下没有工单。', { exact: true })).toBeVisible()
+})

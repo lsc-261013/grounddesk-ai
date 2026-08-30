@@ -236,6 +236,8 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 扩展到“管理员分派 → 客服回复”后，Fastify Inject 的工单测试仍全部通过，但真实 Chromium 在 PATCH 预检阶段被 CORS 拒绝。根因是 API 使用了插件默认方法清单，没有显式包含 PATCH/DELETE。修复为按实际路由声明 `GET/HEAD/POST/PATCH/DELETE/OPTIONS`，增加 OPTIONS 回归测试，并由真实浏览器再次完成分派、回复和解决闭环。Trace 同时发现 `low_confidence` 接管原因漏翻译，已补齐中英文与单测。
 
+一键 Demo Reset 的真实浏览器验收又发现两层只在完整路径出现的问题：前端先对无 Body 的 POST 错误声明 JSON，修复为仅在确有非 FormData Body 时设置 `Content-Type`；请求进入数据库后，`tickets.conversation_id` 的 `ON DELETE RESTRICT` 阻止先删会话。Reset 事务因此改为先删除工单（回复级联），再删除会话。每次失败都由事务完整回滚，没有留下半重置数据。
+
 ### 如何手动验证
 
 1. 运行 `pnpm test:e2e`，确认三条确定性浏览器用例通过；

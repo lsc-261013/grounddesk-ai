@@ -20,8 +20,8 @@ export const useWorkspaceStore = defineStore('workspace-settings', () => {
   const isMutating = ref(false)
   const error = ref<string | null>(null)
 
-  const load = async (): Promise<void> => {
-    isLoading.value = true
+  const load = async (showLoading = true): Promise<void> => {
+    if (showLoading) isLoading.value = true
     error.value = null
     try {
       const id = workspaceId()
@@ -37,7 +37,7 @@ export const useWorkspaceStore = defineStore('workspace-settings', () => {
       error.value =
         cause instanceof Error ? cause.message : 'Workspace settings could not be loaded.'
     } finally {
-      isLoading.value = false
+      if (showLoading) isLoading.value = false
     }
   }
 
@@ -128,7 +128,8 @@ export const useWorkspaceStore = defineStore('workspace-settings', () => {
         method: 'POST',
       })
       demoResetResponseSchema.parse(await response.json())
-      await load()
+      // Keep the reset panel mounted so its explicit success state remains visible.
+      await load(false)
       return true
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Demo Workspace could not be reset.'

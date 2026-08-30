@@ -97,4 +97,31 @@ describe('authentication session synchronization', () => {
     expect(store.session).toBeNull()
     expect(store.error).toBe('Provider sign-out unavailable')
   })
+
+  it('does not declare JSON for authenticated requests without a body', async () => {
+    const { useAuthStore } = await import('../src/stores/auth')
+    const { authenticatedApi } = await import('../src/lib/api')
+    await useAuthStore().initialize()
+
+    await authenticatedApi('/v1/test-action', { method: 'POST' })
+
+    const request = vi.mocked(fetch).mock.calls.at(-1)?.[1]
+    const headers = new Headers(request?.headers)
+    expect(headers.get('content-type')).toBeNull()
+    expect(headers.get('authorization')).toBe('Bearer stable-access-token')
+  })
+
+  it('declares JSON when an authenticated request has a JSON body', async () => {
+    const { useAuthStore } = await import('../src/stores/auth')
+    const { authenticatedApi } = await import('../src/lib/api')
+    await useAuthStore().initialize()
+
+    await authenticatedApi('/v1/test-action', {
+      method: 'POST',
+      body: JSON.stringify({ ok: true }),
+    })
+
+    const request = vi.mocked(fetch).mock.calls.at(-1)?.[1]
+    expect(new Headers(request?.headers).get('content-type')).toBe('application/json')
+  })
 })

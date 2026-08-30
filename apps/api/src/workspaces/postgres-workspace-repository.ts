@@ -207,6 +207,8 @@ export class PostgresWorkspaceRepository implements WorkspaceRepository {
       await transaction`delete from public.daily_demo_usage where workspace_id = ${workspaceId}`
       await transaction`delete from public.ai_usage_events where workspace_id = ${workspaceId}`
       await transaction`delete from public.audit_logs where workspace_id = ${workspaceId}`
+      // Tickets intentionally restrict conversation deletion so handoff evidence cannot disappear accidentally.
+      await transaction`delete from public.tickets where workspace_id = ${workspaceId}`
       await transaction`delete from public.conversations where workspace_id = ${workspaceId}`
       for (const product of DEMO_PRODUCT_BASELINE) {
         await transaction`

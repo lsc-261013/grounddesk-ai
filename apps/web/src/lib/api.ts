@@ -20,13 +20,18 @@ export const workspaceId = (): string => {
 export const authenticatedApi = async (path: string, init?: RequestInit): Promise<Response> => {
   const accessToken = useAuthStore().accessToken
   if (!accessToken) throw new Error('Authentication session is unavailable.')
+  const headers = new Headers(init?.headers)
+  if (
+    init?.body !== undefined &&
+    !(init.body instanceof FormData) &&
+    !headers.has('content-type')
+  ) {
+    headers.set('content-type', 'application/json')
+  }
+  headers.set('authorization', `Bearer ${accessToken}`)
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
-    headers: {
-      ...(init?.body instanceof FormData ? {} : { 'content-type': 'application/json' }),
-      ...init?.headers,
-      authorization: `Bearer ${accessToken}`,
-    },
+    headers,
   })
   if (!response.ok) throw new Error(await errorMessage(response))
   return response

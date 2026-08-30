@@ -141,7 +141,7 @@ pnpm eval:report
 
 ## 真实评测结果
 
-截至 2026-08-30，最新真实 Provider Run `8647b6f5-3d96-4f8a-a755-10cd8b8e4dc3` 为 26/26：引用覆盖率、Retrieval@5、无答案拒答/接管、工具选择、退货规则和跨 Workspace 隔离均达到当前 Demo 集门槛。页面从 `eval_runs` / `eval_results` 读取这些结果，没有写死成绩。
+截至 2026-08-31，最新真实 Provider Run `b2310ecb-6383-4259-9c3b-96bd3f1281c4` 为 26/26：引用覆盖率、Retrieval@5、无答案拒答/接管、工具选择、退货规则和跨 Workspace 隔离均达到当前 Demo 集门槛。页面从 `eval_runs` / `eval_results` 读取这些结果，没有写死成绩。
 
 该结果只代表 26 条固定双语 Demo 用例，不能外推所有行业。项目保留从 21/26 到 26/26 的真实失败与修复过程，见 [评测报告](docs/evaluation-report.md)。
 
