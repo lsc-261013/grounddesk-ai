@@ -20,6 +20,27 @@ describe('API environment validation', () => {
     expect(result.EMBEDDING_DIMENSION).toBe(1024)
   })
 
+  it('uses the platform-provided PORT when API_PORT is not set', () => {
+    const result = parseApiEnv({
+      RUNTIME_MODE: 'offline',
+      NODE_ENV: 'production',
+      PORT: '10000',
+    })
+
+    expect(result.API_PORT).toBe(10_000)
+  })
+
+  it('keeps an explicit API_PORT ahead of the platform fallback', () => {
+    const result = parseApiEnv({
+      RUNTIME_MODE: 'offline',
+      NODE_ENV: 'production',
+      API_PORT: '8787',
+      PORT: '10000',
+    })
+
+    expect(result.API_PORT).toBe(8_787)
+  })
+
   it('requires every provider secret in connected mode', () => {
     expect(() =>
       parseApiEnv({

@@ -1,0 +1,71 @@
+services:
+  - type: web
+    name: grounddesk-api
+    runtime: node
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @grounddesk/api build
+    preDeployCommand: pnpm db:migrate
+    startCommand: pnpm --filter @grounddesk/api start
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: RUNTIME_MODE
+        value: connected
+      - key: NODE_ENV
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: WEB_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com
+      - key: DEEPSEEK_MODEL
+        value: deepseek-v4-flash
+      - key: DEEPSEEK_TIMEOUT_MS
+        value: 30000
+      - key: DEEPSEEK_INPUT_COST_PER_MILLION_USD
+        value: 0.44
+      - key: DEEPSEEK_OUTPUT_COST_PER_MILLION_USD
+        value: 1.32
+      - key: SILICONFLOW_API_KEY
+        sync: false
+      - key: EMBEDDING_BASE_URL
+        value: https://api.siliconflow.cn/v1
+      - key: EMBEDDING_MODEL
+        value: BAAI/bge-m3
+      - key: EMBEDDING_DIMENSION
+        value: 1024
+      - key: EMBEDDING_TIMEOUT_MS
+        value: 20000
+      - key: DEMO_DAILY_REQUEST_LIMIT
+        value: 120
+      - key: DEMO_DAILY_TOKEN_LIMIT
+        value: 250000
+      - key: PUBLIC_CHAT_RATE_LIMIT
+        value: 12
+      - key: PUBLIC_CHAT_RATE_WINDOW_MS
+        value: 60000
+      - key: MAX_UPLOAD_BYTES
+        value: 10485760
+      - key: MAX_WORKSPACE_DOCUMENTS
+        value: 20
+      - key: CHUNK_TARGET_CHARS
+        value: 1200
+      - key: CHUNK_OVERLAP_CHARS
+        value: 180
+      - key: WEBHOOK_TIMEOUT_MS
+        value: 8000
+      - key: WEBHOOK_MAX_ATTEMPTS
+        value: 3

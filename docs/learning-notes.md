@@ -283,3 +283,37 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 ### 继续追问时怎样深入
 
 可以说明数据库唯一约束如何处理并发写入、为什么规格使用受限 JSON 对象而不是动态表列、归档对检索索引的影响，以及公开 Demo 应如何配合定时重置和请求额度防止滥用。
+
+## 里程碑 7：部署边界与平台端口
+
+### 解决什么问题
+
+本地能运行不等于托管环境能启动。Vercel 需要正确的 Monorepo 构建目录和 SPA Rewrite，Render 要求监听 `0.0.0.0` 与平台分配的 `PORT`，两端还要用精确 Origin 完成 CORS，且不能把服务端密钥打进 Vite 产物。
+
+### 数据流与关键文件
+
+`vercel.json` 从仓库根安装 workspace，只构建 `@grounddesk/web` 并发布 `apps/web/dist`；`render.yaml` 构建 `@grounddesk/api`、在 Pre-deploy 执行幂等迁移，再用 `/health` 验证实例。`apps/api/src/config/env.ts` 优先读取本地 `API_PORT`，部署时回退到 Render 提供的 `PORT`。
+
+### 为什么这样设计
+
+部署配置版本化能让面试官和后续维护者复现环境，而不是依赖 Dashboard 中无人知道的手工设置。Blueprint 对密钥只声明 `sync: false`，公开 `VITE_` 变量与服务端 Secret 明确分开。Seed 不进入每次部署，避免上线更新意外重置 Demo 数据。
+
+### 一个真实问题及修复
+
+部署审计发现 API 只读取 `API_PORT=8787`，而 Render 推荐运行时绑定自动提供的 `PORT`。这在本地完全正常，却可能让云端端口探测失败。修复为 `API_PORT ?? PORT`，同时保留显式本地覆盖，并增加两条环境解析测试验证优先级。
+
+### 如何手动验证
+
+1. 不设置 `API_PORT`、仅设置 `PORT=10000`，确认 API 监听 10000；
+2. 同时设置两者，确认 `API_PORT` 优先；
+3. 用生产构建启动 API，访问 `/health`；
+4. 在 Vercel 刷新 `/console/products`，确认 SPA Rewrite 不返回 404；
+5. 检查浏览器构建产物中只有 Project URL 与 Publishable Key，没有 Secret Key 或数据库 URI。
+
+### 面试时 30 秒解释
+
+“我把部署当作代码的一部分：Vercel 配置 Monorepo 构建和 SPA 路由，Render 配置幂等迁移、健康检查与平台端口回退。浏览器只得到 Publishable Key，所有高权限密钥留在 API。部署后还会从无痕窗口重新跑 RAG、工具和接管，而不是把本地通过当作上线完成。”
+
+### 继续追问时怎样深入
+
+可以说明为什么数据库迁移适合 Pre-deploy 而 Seed 不适合、CORS Origin 为什么不能写通配符、静态前端与 API 如何分别回滚、付费常驻实例如何避免 HR 首次访问冷启动，以及密钥轮换顺序。

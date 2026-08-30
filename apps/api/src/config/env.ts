@@ -95,6 +95,11 @@ const apiEnvSchema = z
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>
 
-export const parseApiEnv = (source: NodeJS.ProcessEnv): ApiEnv => apiEnvSchema.parse(source)
+export const parseApiEnv = (source: NodeJS.ProcessEnv): ApiEnv =>
+  apiEnvSchema.parse({
+    ...source,
+    // Render and similar platforms assign the listening port at runtime.
+    API_PORT: source.API_PORT ?? source.PORT,
+  })
 
 export const env = parseApiEnv(process.env)
