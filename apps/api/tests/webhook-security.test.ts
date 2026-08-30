@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto'
+import { createServer } from 'node:http'
 
 import type { WebhookDelivery, WebhookEndpoint, WebhookEvent } from '@grounddesk/shared'
 import { describe, expect, it, vi } from 'vitest'
@@ -182,5 +183,79 @@ describe('webhook security', () => {
 
     expect(sender).toHaveBeenCalledOnce()
     expect(delivery).toMatchObject({ status: 'delivered', responseStatus: 202 })
+  })
+
+  it('preserves signatures across a real HTTP failure and retry', async () => {
+    const received: Array<{
+      body: string
+      signature: string
+      timestamp: string
+    }> = []
+    const receiver = createServer((request, response) => {
+      const chunks: Buffer[] = []
+      request.on('data', (chunk: Buffer) => chunks.push(chunk))
+      request.on('end', () => {
+        received.push({
+          body: Buffer.concat(chunks).toString('utf8'),
+          signature: String(request.headers['x-grounddesk-signature'] ?? ''),
+          timestamp: String(request.headers['x-grounddesk-timestamp'] ?? ''),
+        })
+        response.statusCode = received.length === 1 ? 503 : 202
+        response.end(received.length === 1 ? 'retry later' : 'accepted')
+      })
+    })
+    await new Promise<void>((resolve, reject) => {
+      receiver.once('error', reject)
+      receiver.listen(0, '127.0.0.1', resolve)
+    })
+    const address = receiver.address()
+    if (!address || typeof address === 'string') throw new Error('Expected a TCP receiver address.')
+
+    const repository = new MemoryWebhookRepository()
+    const sender: typeof fetch = (_input, init) =>
+      fetch(`http://127.0.0.1:${address.port}/events`, init)
+    const service = new DefaultWebhookService(
+      repository,
+      'server-master-secret',
+      { timeoutMs: 2_000, maxAttempts: 3, production: true },
+      sender,
+      () => Promise.resolve(['93.184.216.34']),
+    )
+
+    try {
+      const created = await service.createEndpoint(
+        WORKSPACE_ID,
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        'https://hooks.example.com/grounddesk',
+        ['webhook.test'],
+      )
+      const firstAttempt = await service.testEndpoint(WORKSPACE_ID, ENDPOINT_ID)
+      expect(firstAttempt).toMatchObject({ status: 'failed', responseStatus: 503 })
+
+      repository.due.push({
+        id: DELIVERY_ID,
+        endpointId: ENDPOINT_ID,
+        workspaceId: WORKSPACE_ID,
+        endpointUrl: 'https://hooks.example.com/grounddesk',
+        encryptedSigningSecret: repository.encryptedSecret,
+        eventName: 'webhook.test',
+        payload: { type: 'webhook.test' },
+        attemptCount: 2,
+      })
+      await service.drainOnce()
+
+      expect(repository.delivery).toMatchObject({ status: 'delivered', responseStatus: 202 })
+      expect(received).toHaveLength(2)
+      for (const request of received) {
+        expect(request.signature).toBe(
+          createWebhookSignature(created.signingSecret, request.timestamp, request.body),
+        )
+      }
+    } finally {
+      await service.close()
+      await new Promise<void>((resolve, reject) => {
+        receiver.close((error) => (error ? reject(error) : resolve()))
+      })
+    }
   })
 })

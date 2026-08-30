@@ -56,6 +56,14 @@ test('administrator can refresh protected pages and inspect operations data', as
   await expect(page.getByText('Airwave S1', { exact: false }).first()).toBeVisible()
   await expect(page.getByRole('button', { name: '新增商品', exact: true })).toBeVisible()
 
+  await page.goto('/console/knowledge')
+  const readySource = page.locator('.document-list > li').filter({ hasText: '可检索' }).first()
+  await expect(readySource).toBeVisible()
+  await readySource.locator('button').first().click()
+  await expect(page.getByRole('heading', { name: /Avenlo/ })).toBeVisible()
+  await expect(page.locator('.chunk-list > li').first()).toBeVisible()
+  await page.getByRole('button', { name: '关闭 Chunk 预览', exact: true }).first().click()
+
   await page.getByRole('button', { name: '退出登录', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('button', { name: '安全登录', exact: true })).toBeVisible()
@@ -79,9 +87,9 @@ test('agent navigation and direct-route states respect role boundaries', async (
   await expect(page.getByRole('heading', { name: '人工工单队列', exact: true })).toBeVisible()
 })
 
-test('live public demo performs order lookup and creates a handoff ticket', async ({ page }) => {
+test('live demo cites knowledge, calls tools, and completes human handoff', async ({ page }) => {
   test.skip(process.env.E2E_LIVE_AI !== 'true', 'Run explicitly against configured live providers.')
-  test.setTimeout(90_000)
+  test.setTimeout(180_000)
 
   await page.goto('/demo')
   await page
@@ -105,8 +113,49 @@ test('live public demo performs order lookup and creates a handoff ticket', asyn
   await expect(handoff).toContainText('资料不足', { timeout: 45_000 })
 
   await login(page, ADMIN_EMAIL)
+
+  await page.goto('/console/playground')
+  await page
+    .getByRole('button', { name: 'LinkCore C240 线材的保修期是多久？', exact: true })
+    .click()
+  const citation = page.locator('.citation-stack details').first()
+  await expect(citation).toBeVisible({ timeout: 45_000 })
+  await citation.locator('summary').click()
+  await expect(citation.locator('blockquote')).toBeVisible()
+
   await page.goto('/console/tickets')
-  await expect(
-    page.getByText('你们是否为火星殖民地提供维修服务？', { exact: false }).first(),
-  ).toBeVisible()
+  const ticketRow = page
+    .locator('.ticket-row:has(.status-badge[data-status="open"])')
+    .filter({ hasText: '你们是否为火星殖民地提供维修服务？' })
+    .first()
+  await expect(ticketRow).toBeVisible()
+  await ticketRow.click()
+  const assignee = page
+    .locator('.ticket-controls label')
+    .filter({ hasText: '分配客服' })
+    .locator('select')
+  await assignee.selectOption({ label: 'GroundDesk Demo Agent' })
+  await expect(assignee).not.toHaveValue('')
+
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await login(page, AGENT_EMAIL)
+  await page.goto('/console/tickets')
+
+  const assignedTicket = page
+    .locator('.ticket-row:has(.status-badge[data-status="open"])')
+    .filter({ hasText: '你们是否为火星殖民地提供维修服务？' })
+    .first()
+  await expect(assignedTicket).toBeVisible()
+  await assignedTicket.click()
+  const reply = '已收到请求，我们会核对服务覆盖范围后由人工继续处理。'
+  await page.getByPlaceholder('输入给顾客的人工回复…', { exact: true }).fill(reply)
+  await page.getByRole('button', { name: '发送回复', exact: true }).click()
+  await expect(page.getByText(reply, { exact: true })).toBeVisible()
+  await page
+    .locator('.ticket-controls label')
+    .filter({ hasText: '处理状态' })
+    .locator('select')
+    .selectOption('resolved')
+  await expect(page.getByPlaceholder('输入给顾客的人工回复…', { exact: true })).toHaveCount(0)
 })

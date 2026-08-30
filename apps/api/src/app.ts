@@ -130,6 +130,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(cors, {
     origin: environment.WEB_ORIGIN,
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   })
   await app.register(rateLimit, {
     global: false,

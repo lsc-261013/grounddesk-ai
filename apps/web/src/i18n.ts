@@ -359,6 +359,7 @@ export const i18n = createI18n({
         priority: { low: '低', normal: '普通', high: '高', urgent: '紧急' },
         reason: {
           no_evidence: '现有资料不足',
+          low_confidence: '证据低于可信阈值',
           conflict: '政策证据冲突',
           prompt_injection: '提示注入或越权请求',
           user_requested_human: '顾客要求真人服务',
@@ -906,6 +907,7 @@ export const i18n = createI18n({
         priority: { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' },
         reason: {
           no_evidence: 'Insufficient evidence',
+          low_confidence: 'Evidence below the confidence threshold',
           conflict: 'Conflicting policy evidence',
           prompt_injection: 'Prompt injection or unauthorized request',
           user_requested_human: 'Customer requested a human',

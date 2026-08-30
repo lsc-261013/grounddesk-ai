@@ -25,4 +25,16 @@ describe('locale persistence', () => {
     i18n.global.locale.value = 'en-US'
     expect(i18n.global.t('auth.emailPlaceholder')).toBe('name@example.com')
   })
+
+  it('translates retrieval handoff reasons in both locales', async () => {
+    const { i18n } = await import('../src/i18n')
+
+    i18n.global.locale.value = 'zh-CN'
+    expect(i18n.global.t('tickets.reason.low_confidence')).toBe('证据低于可信阈值')
+
+    i18n.global.locale.value = 'en-US'
+    expect(i18n.global.t('tickets.reason.low_confidence')).toBe(
+      'Evidence below the confidence threshold',
+    )
+  })
 })

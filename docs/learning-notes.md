@@ -234,6 +234,8 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 首轮 E2E 发现语言按钮能立即切成英文，刷新后内容仍为英文，但 `<html lang>` 回到了静态模板的 `zh-CN`。原因是 i18n 读取了持久化 Locale，却没有在应用初始化时同步文档语言。修复为只读取一次 `initialLocale`，同时赋给 Vue I18n 和 `document.documentElement.lang`。测试接入后还发现 Vitest 会误收集 `e2e` 目录，因此将单元测试显式限定为 `tests`，避免两个测试运行器互相执行。
 
+扩展到“管理员分派 → 客服回复”后，Fastify Inject 的工单测试仍全部通过，但真实 Chromium 在 PATCH 预检阶段被 CORS 拒绝。根因是 API 使用了插件默认方法清单，没有显式包含 PATCH/DELETE。修复为按实际路由声明 `GET/HEAD/POST/PATCH/DELETE/OPTIONS`，增加 OPTIONS 回归测试，并由真实浏览器再次完成分派、回复和解决闭环。Trace 同时发现 `low_confidence` 接管原因漏翻译，已补齐中英文与单测。
+
 ### 如何手动验证
 
 1. 运行 `pnpm test:e2e`，确认三条确定性浏览器用例通过；
