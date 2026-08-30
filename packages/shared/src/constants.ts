@@ -27,6 +27,25 @@ export const AGENT_INTENTS = [
   'human_handoff',
 ] as const
 export const TICKET_STATUSES = ['open', 'in_progress', 'waiting_customer', 'resolved'] as const
+export const TICKET_PRIORITIES = ['low', 'normal', 'high', 'urgent'] as const
+export const WEBHOOK_EVENTS = [
+  'ticket.created',
+  'ticket.updated',
+  'ticket.reply.created',
+  'webhook.test',
+] as const
+export const WEBHOOK_DELIVERY_STATUSES = ['pending', 'delivered', 'failed'] as const
+export const EVALUATION_CATEGORIES = [
+  'knowledge',
+  'order',
+  'return',
+  'unknown',
+  'security',
+  'isolation',
+] as const
+export const EVALUATION_RUN_STATUSES = ['queued', 'running', 'completed', 'failed'] as const
+export const CONVERSATION_SOURCES = ['public_demo', 'playground', 'evaluation'] as const
+export const FEEDBACK_RATINGS = ['helpful', 'unhelpful'] as const
 export const RETURN_ELIGIBILITY_STATUSES = ['eligible', 'ineligible', 'manual_review'] as const
 export const CHAT_STAGES = [
   'understanding',

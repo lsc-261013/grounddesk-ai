@@ -96,7 +96,8 @@ if (!env.SUPABASE_DB_URL) {
               'knowledge_chunks', 'conversations', 'messages', 'message_citations',
               'tool_calls', 'retrieval_logs', 'tickets', 'ticket_messages',
               'webhook_endpoints', 'webhook_deliveries', 'ai_usage_events',
-              'daily_demo_usage', 'eval_cases', 'eval_runs', 'eval_results', 'audit_logs'
+              'daily_demo_usage', 'eval_cases', 'eval_runs', 'eval_results', 'audit_logs',
+              'message_feedback'
             )
         ) as "rlsTableCount",
         (
@@ -112,7 +113,8 @@ if (!env.SUPABASE_DB_URL) {
               'knowledge_chunks', 'conversations', 'messages', 'message_citations',
               'tool_calls', 'retrieval_logs', 'tickets', 'ticket_messages',
               'webhook_endpoints', 'webhook_deliveries', 'ai_usage_events',
-              'daily_demo_usage', 'eval_cases', 'eval_runs', 'eval_results', 'audit_logs'
+              'daily_demo_usage', 'eval_cases', 'eval_runs', 'eval_results', 'audit_logs',
+              'message_feedback'
             )
         ) as "rlsEnabledCount",
         (
@@ -122,7 +124,10 @@ if (!env.SUPABASE_DB_URL) {
             '202608290001_initial_schema',
             '202608290002_auth_boundaries',
             '202608290003_knowledge_storage',
-            '202608300004_chat_evidence_signals'
+            '202608300004_chat_evidence_signals',
+            '202608300005_ticket_webhook_outbox',
+            '202608300006_conversation_sources',
+            '202608300007_message_feedback'
           )
         ) as "migrationCount",
         exists (
@@ -178,9 +183,9 @@ if (!env.SUPABASE_DB_URL) {
       hybridFunction: infrastructureResult.hybridFunctionExists,
       vectorIndex: infrastructureResult.vectorIndexExists,
       rlsCoverage:
-        infrastructureResult.rlsTableCount === 25 &&
+        infrastructureResult.rlsTableCount === 26 &&
         infrastructureResult.rlsEnabledCount === infrastructureResult.rlsTableCount,
-      migrationsRecorded: infrastructureResult.migrationCount === 4,
+      migrationsRecorded: infrastructureResult.migrationCount === 7,
       privateKnowledgeBucket: infrastructureResult.knowledgeBucketExists,
       demoLookup: demoResult.lookupOrderExists,
       returnWindowCases:

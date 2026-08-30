@@ -32,6 +32,10 @@
     "knowledge:smoke": "pnpm --filter @grounddesk/api knowledge:smoke",
     "knowledge:http-smoke": "pnpm --filter @grounddesk/api knowledge:http-smoke",
     "agent:smoke": "pnpm --filter @grounddesk/api agent:smoke",
+    "tickets:smoke": "pnpm --filter @grounddesk/api tickets:smoke",
+    "eval:smoke": "pnpm --filter @grounddesk/api eval:smoke",
+    "eval:live": "pnpm --filter @grounddesk/api eval:live",
+    "eval:report": "pnpm --filter @grounddesk/api eval:report",
     "env:check": "pnpm --filter @grounddesk/api env:check"
   },
   "devDependencies": {

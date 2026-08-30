@@ -16,7 +16,7 @@ flowchart LR
   API --> DeepSeek[DeepSeek Generation / Tool Calling]
   API --> SiliconFlow[SiliconFlow Embedding]
   API --> Storage[Supabase Private Storage]
-  API -. 里程碑 5 .-> Webhook[Signed Webhook]
+  API -->|HMAC + Outbox| Webhook[Signed Webhook]
 ```
 
 ## 数据隔离
@@ -54,3 +54,13 @@ flowchart LR
 ## 单 Agent 与流式边界
 
 Fastify 通过显式状态机编排四个允许意图，并以 POST + SSE 输出可观察事件。DeepSeek 只能选择白名单工具；参数经 Zod 校验后进入固定 Repository，模型无法执行 SQL。知识回答使用真实 Token 流，隐藏推理内容不会传给浏览器。低置信度、冲突、提示注入、工具失败与引用校验失败统一进入可靠拒答和人工工单。详见 [Agent 工作流](./agent-workflow.md)。
+
+## 工单与 Webhook
+
+人工工单引用原会话、证据 Chunk 和工具调用记录。管理员可查看并分派全部工单；客服 Repository 在 SQL 层只返回分配给当前用户的工单。人工回复和状态更新都重新检查 Workspace 与角色。
+
+Webhook 采用事务型 Outbox：工单插入、状态更新或回复与 `webhook_deliveries` 在同一数据库事务内产生。投递器使用 HMAC-SHA256 签名、超时、指数退避和有限重试；保存和投递前都执行 DNS/IP 检查，禁止环回、私网、保留地址、URL 凭据与生产 HTTP。签名密钥以 AES-256-GCM 加密保存，只在创建时展示一次。
+
+## 运营指标与评测隔离
+
+`conversations.source` 区分 `public_demo`、`playground` 与 `evaluation`。真实评测保留消息、检索和用量审计，但不消耗公开 Demo 日额度、不创建运营工单，也不进入 Overview 指标。Overview 在查询时计算近 30 天会话量、事实回答引用覆盖率、拒答/接管率、延迟 P50、Token 与估算成本，不读取 Seed 指标或页面常量。

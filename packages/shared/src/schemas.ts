@@ -4,14 +4,21 @@ import {
   AGENT_INTENTS,
   CHAT_STAGES,
   CHAT_STAGE_STATUSES,
+  CONVERSATION_SOURCES,
   DOCUMENT_KINDS,
   DOCUMENT_STATUSES,
+  EVALUATION_CATEGORIES,
+  EVALUATION_RUN_STATUSES,
+  FEEDBACK_RATINGS,
   ORDER_STATUSES,
   RETURN_ELIGIBILITY_STATUSES,
   RETURN_REASONS,
   SUPPORTED_LOCALES,
+  TICKET_PRIORITIES,
   TICKET_STATUSES,
   TOOL_RESULT_STATUSES,
+  WEBHOOK_DELIVERY_STATUSES,
+  WEBHOOK_EVENTS,
   WORKSPACE_ROLES,
 } from './constants.js'
 
@@ -22,6 +29,13 @@ export const documentKindSchema = z.enum(DOCUMENT_KINDS)
 export const orderStatusSchema = z.enum(ORDER_STATUSES)
 export const agentIntentSchema = z.enum(AGENT_INTENTS)
 export const ticketStatusSchema = z.enum(TICKET_STATUSES)
+export const ticketPrioritySchema = z.enum(TICKET_PRIORITIES)
+export const webhookEventSchema = z.enum(WEBHOOK_EVENTS)
+export const webhookDeliveryStatusSchema = z.enum(WEBHOOK_DELIVERY_STATUSES)
+export const evaluationCategorySchema = z.enum(EVALUATION_CATEGORIES)
+export const evaluationRunStatusSchema = z.enum(EVALUATION_RUN_STATUSES)
+export const conversationSourceSchema = z.enum(CONVERSATION_SOURCES)
+export const feedbackRatingSchema = z.enum(FEEDBACK_RATINGS)
 export const returnEligibilityStatusSchema = z.enum(RETURN_ELIGIBILITY_STATUSES)
 export const returnReasonSchema = z.enum(RETURN_REASONS)
 export const chatStageSchema = z.enum(CHAT_STAGES)
@@ -151,6 +165,15 @@ export const publicChatRequestSchema = z.object({
   locale: localeSchema,
 })
 
+export const publicChatFeedbackInputSchema = z.object({
+  sessionId: z.uuid(),
+  conversationId: z.uuid(),
+  messageId: z.uuid(),
+  rating: feedbackRatingSchema,
+  comment: z.string().trim().max(500).optional(),
+})
+export const publicChatFeedbackResponseSchema = z.object({ accepted: z.literal(true) })
+
 export const orderLookupToolInputSchema = orderLookupInputSchema
 
 export const returnEligibilityToolInputSchema = orderLookupInputSchema.extend({
@@ -181,6 +204,23 @@ export const publicOrderSchema = z.object({
   totalCents: z.number().int().nonnegative(),
   currency: z.string().length(3),
   items: z.array(publicOrderItemSchema).min(1),
+})
+
+export const publicProductSchema = z.object({
+  id: z.uuid(),
+  sku: z.string().min(1),
+  model: z.string().min(1),
+  category: z.string().min(1),
+  nameZh: z.string().min(1),
+  nameEn: z.string().min(1),
+  descriptionZh: z.string().min(1),
+  descriptionEn: z.string().min(1),
+  priceCents: z.number().int().nonnegative(),
+  currency: z.string().length(3),
+  specs: z.record(z.string(), z.unknown()),
+})
+export const publicProductListResponseSchema = z.object({
+  products: z.array(publicProductSchema),
 })
 
 export const orderLookupToolResultSchema = z.object({
@@ -243,7 +283,11 @@ export const chatStreamEventSchema = z.discriminatedUnion('type', [
     summary: z.string().min(1),
     details: toolEventDetailsSchema,
   }),
-  z.object({ type: z.literal('replace_answer'), content: z.string().min(1) }),
+  z.object({
+    type: z.literal('replace_answer'),
+    content: z.string().min(1),
+    citations: z.array(chatCitationSchema).optional(),
+  }),
   z.object({
     type: z.literal('done'),
     messageId: z.uuid(),
@@ -254,6 +298,214 @@ export const chatStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('error'), code: z.string().min(1), message: z.string().min(1) }),
 ])
 
+export const ticketAssigneeSchema = z.object({
+  id: z.uuid(),
+  displayName: z.string().min(1),
+})
+
+export const ticketSummarySchema = z.object({
+  id: z.uuid(),
+  conversationId: z.uuid(),
+  summary: z.string().min(1),
+  handoffReason: z.string().min(1),
+  priority: ticketPrioritySchema,
+  status: ticketStatusSchema,
+  locale: localeSchema,
+  assignedTo: ticketAssigneeSchema.nullable(),
+  messageCount: z.number().int().nonnegative(),
+  createdAt: z.iso.datetime(),
+  firstResponseAt: z.iso.datetime().nullable(),
+  resolvedAt: z.iso.datetime().nullable(),
+  updatedAt: z.iso.datetime(),
+})
+
+export const ticketConversationMessageSchema = z.object({
+  id: z.uuid(),
+  role: z.enum(['user', 'assistant', 'system', 'tool']),
+  content: z.string(),
+  intent: agentIntentSchema.nullable(),
+  refused: z.boolean(),
+  handedOff: z.boolean(),
+  citations: z.array(chatCitationSchema),
+  createdAt: z.iso.datetime(),
+})
+
+export const ticketReplySchema = z.object({
+  id: z.uuid(),
+  authorType: z.enum(['customer', 'agent', 'system']),
+  author: ticketAssigneeSchema.nullable(),
+  body: z.string().min(1),
+  createdAt: z.iso.datetime(),
+})
+
+export const ticketToolTraceSchema = z.object({
+  id: z.uuid(),
+  toolName: z.enum(['order_lookup', 'return_eligibility']),
+  status: z.enum(['started', 'succeeded', 'not_found', 'forbidden', 'failed']),
+  argumentsRedacted: z.record(z.string(), z.unknown()),
+  resultSummary: z.record(z.string(), z.unknown()).nullable(),
+  durationMs: z.number().int().nonnegative().nullable(),
+  errorType: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+})
+
+export const ticketDetailSchema = ticketSummarySchema.extend({
+  evidence: z.array(chatCitationSchema),
+  tools: z.array(ticketToolTraceSchema),
+  conversationMessages: z.array(ticketConversationMessageSchema),
+  replies: z.array(ticketReplySchema),
+})
+
+export const ticketListResponseSchema = z.object({ tickets: z.array(ticketSummarySchema) })
+export const ticketDetailResponseSchema = z.object({ ticket: ticketDetailSchema })
+export const ticketReplyInputSchema = z.object({ body: z.string().trim().min(1).max(4_000) })
+export const ticketStatusUpdateInputSchema = z.object({ status: ticketStatusSchema })
+export const ticketAssignmentInputSchema = z.object({
+  assignedTo: z.uuid().nullable(),
+  priority: ticketPrioritySchema.optional(),
+})
+export const assignableAgentsResponseSchema = z.object({ agents: z.array(ticketAssigneeSchema) })
+
+export const webhookEndpointSchema = z.object({
+  id: z.uuid(),
+  url: z.url(),
+  subscribedEvents: z.array(webhookEventSchema),
+  enabled: z.boolean(),
+  secretHint: z.string().min(1).nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+})
+
+export const webhookDeliverySchema = z.object({
+  id: z.uuid(),
+  endpointId: z.uuid(),
+  endpointUrl: z.url(),
+  eventName: webhookEventSchema,
+  status: webhookDeliveryStatusSchema,
+  attemptCount: z.number().int().nonnegative().max(5),
+  responseStatus: z.number().int().min(100).max(599).nullable(),
+  responseExcerpt: z.string().nullable(),
+  nextAttemptAt: z.iso.datetime().nullable(),
+  deliveredAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+})
+
+export const webhookEndpointCreateInputSchema = z.object({
+  url: z.url(),
+  subscribedEvents: z.array(webhookEventSchema).min(1),
+})
+export const webhookEndpointUpdateInputSchema = z
+  .object({
+    url: z.url().optional(),
+    subscribedEvents: z.array(webhookEventSchema).min(1).optional(),
+    enabled: z.boolean().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, 'At least one setting is required.')
+export const webhookEndpointListResponseSchema = z.object({
+  endpoints: z.array(webhookEndpointSchema),
+})
+export const webhookEndpointCreateResponseSchema = z.object({
+  endpoint: webhookEndpointSchema,
+  signingSecret: z.string().min(32),
+})
+export const webhookEndpointResponseSchema = z.object({ endpoint: webhookEndpointSchema })
+export const webhookDeliveryListResponseSchema = z.object({
+  deliveries: z.array(webhookDeliverySchema),
+})
+export const webhookTestResponseSchema = z.object({ delivery: webhookDeliverySchema })
+
+export const evaluationCaseSchema = z.object({
+  id: z.uuid(),
+  caseKey: z.string().min(1),
+  category: evaluationCategorySchema,
+  locale: localeSchema,
+  input: z.record(z.string(), z.unknown()),
+  expected: z.record(z.string(), z.unknown()),
+  enabled: z.boolean(),
+})
+
+export const evaluationMetricsSchema = z.object({
+  total: z.number().int().nonnegative(),
+  passed: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  citationCoverage: z.number().min(0).max(1).nullable(),
+  retrievalAt5: z.number().min(0).max(1).nullable(),
+  refusalHandoffRate: z.number().min(0).max(1).nullable(),
+  toolSelectionAccuracy: z.number().min(0).max(1).nullable(),
+  returnRuleAccuracy: z.number().min(0).max(1).nullable(),
+  isolationPassRate: z.number().min(0).max(1).nullable(),
+})
+
+export const evaluationRunSchema = z.object({
+  id: z.uuid(),
+  status: evaluationRunStatusSchema,
+  providerMode: z.enum(['mock', 'live']),
+  gitCommitSha: z.string().nullable(),
+  startedAt: z.iso.datetime().nullable(),
+  completedAt: z.iso.datetime().nullable(),
+  summary: evaluationMetricsSchema.nullable(),
+  createdAt: z.iso.datetime(),
+})
+
+export const evaluationResultSchema = z.object({
+  id: z.uuid(),
+  caseId: z.uuid(),
+  caseKey: z.string().min(1),
+  category: evaluationCategorySchema,
+  locale: localeSchema,
+  passed: z.boolean(),
+  actual: z.record(z.string(), z.unknown()),
+  failures: z.array(z.string()),
+  latencyMs: z.number().int().nonnegative().nullable(),
+})
+
+export const evaluationCaseListResponseSchema = z.object({
+  cases: z.array(evaluationCaseSchema),
+})
+export const evaluationRunListResponseSchema = z.object({
+  runs: z.array(evaluationRunSchema),
+})
+export const evaluationRunDetailResponseSchema = z.object({
+  run: evaluationRunSchema,
+  results: z.array(evaluationResultSchema),
+})
+export const evaluationRunCreateInputSchema = z.object({
+  providerMode: z.enum(['mock', 'live']),
+})
+export const evaluationRunResponseSchema = z.object({ run: evaluationRunSchema })
+export const publicEvaluationSummarySchema = z.object({
+  runId: z.uuid(),
+  completedAt: z.iso.datetime(),
+  metrics: evaluationMetricsSchema,
+})
+export const publicEvaluationSummaryResponseSchema = z.object({
+  evaluation: publicEvaluationSummarySchema.nullable(),
+})
+
+export const overviewKnowledgeGapSchema = z.object({
+  query: z.string().min(1),
+  occurrenceCount: z.number().int().positive(),
+  lastSeenAt: z.iso.datetime(),
+})
+
+export const overviewMetricsSchema = z.object({
+  periodDays: z.number().int().positive(),
+  totalConversations: z.number().int().nonnegative(),
+  assistantAnswers: z.number().int().nonnegative(),
+  openTickets: z.number().int().nonnegative(),
+  citationCoverageRate: z.number().min(0).max(1).nullable(),
+  refusalRate: z.number().min(0).max(1).nullable(),
+  handoffRate: z.number().min(0).max(1).nullable(),
+  medianFirstTokenLatencyMs: z.number().int().nonnegative().nullable(),
+  medianTotalLatencyMs: z.number().int().nonnegative().nullable(),
+  totalTokens: z.number().int().nonnegative().nullable(),
+  estimatedCostUsd: z.number().nonnegative().nullable(),
+  knowledgeGaps: z.array(overviewKnowledgeGapSchema),
+})
+
+export const overviewMetricsResponseSchema = z.object({ metrics: overviewMetricsSchema })
+
 export type Locale = z.infer<typeof localeSchema>
 export type WorkspaceRole = z.infer<typeof workspaceRoleSchema>
 export type DocumentStatus = z.infer<typeof documentStatusSchema>
@@ -261,6 +513,9 @@ export type DocumentKind = z.infer<typeof documentKindSchema>
 export type OrderStatus = z.infer<typeof orderStatusSchema>
 export type AgentIntent = z.infer<typeof agentIntentSchema>
 export type TicketStatus = z.infer<typeof ticketStatusSchema>
+export type TicketPriority = z.infer<typeof ticketPrioritySchema>
+export type WebhookEvent = z.infer<typeof webhookEventSchema>
+export type WebhookDeliveryStatus = z.infer<typeof webhookDeliveryStatusSchema>
 export type ReturnEligibilityStatus = z.infer<typeof returnEligibilityStatusSchema>
 export type ReturnReason = z.infer<typeof returnReasonSchema>
 export type ChatStage = z.infer<typeof chatStageSchema>
@@ -282,8 +537,28 @@ export type OrderLookupToolInput = z.infer<typeof orderLookupToolInputSchema>
 export type ReturnEligibilityToolInput = z.infer<typeof returnEligibilityToolInputSchema>
 export type PublicOrderItem = z.infer<typeof publicOrderItemSchema>
 export type PublicOrder = z.infer<typeof publicOrderSchema>
+export type PublicProduct = z.infer<typeof publicProductSchema>
 export type OrderLookupToolResult = z.infer<typeof orderLookupToolResultSchema>
 export type ReturnEligibilityResult = z.infer<typeof returnEligibilityResultSchema>
 export type ChatCitation = z.infer<typeof chatCitationSchema>
 export type ToolEventDetails = z.infer<typeof toolEventDetailsSchema>
 export type ChatStreamEvent = z.infer<typeof chatStreamEventSchema>
+export type TicketAssignee = z.infer<typeof ticketAssigneeSchema>
+export type TicketSummary = z.infer<typeof ticketSummarySchema>
+export type TicketConversationMessage = z.infer<typeof ticketConversationMessageSchema>
+export type TicketReply = z.infer<typeof ticketReplySchema>
+export type TicketToolTrace = z.infer<typeof ticketToolTraceSchema>
+export type TicketDetail = z.infer<typeof ticketDetailSchema>
+export type WebhookEndpoint = z.infer<typeof webhookEndpointSchema>
+export type WebhookDelivery = z.infer<typeof webhookDeliverySchema>
+export type EvaluationCategory = z.infer<typeof evaluationCategorySchema>
+export type EvaluationCase = z.infer<typeof evaluationCaseSchema>
+export type EvaluationMetrics = z.infer<typeof evaluationMetricsSchema>
+export type EvaluationRun = z.infer<typeof evaluationRunSchema>
+export type EvaluationResult = z.infer<typeof evaluationResultSchema>
+export type PublicEvaluationSummary = z.infer<typeof publicEvaluationSummarySchema>
+export type ConversationSource = z.infer<typeof conversationSourceSchema>
+export type FeedbackRating = z.infer<typeof feedbackRatingSchema>
+export type PublicChatFeedbackInput = z.infer<typeof publicChatFeedbackInputSchema>
+export type OverviewKnowledgeGap = z.infer<typeof overviewKnowledgeGapSchema>
+export type OverviewMetrics = z.infer<typeof overviewMetricsSchema>

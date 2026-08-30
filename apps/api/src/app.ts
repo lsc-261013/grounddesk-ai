@@ -6,25 +6,46 @@ import Fastify, { type FastifyError, type FastifyInstance } from 'fastify'
 import { ZodError } from 'zod'
 
 import { createIdentityDependencies } from './auth/dependencies.js'
+import {
+  createAnalyticsDependencies,
+  type AnalyticsDependencies,
+} from './analytics/dependencies.js'
 import { isHttpError } from './auth/errors.js'
 import './auth/request-context.js'
 import type { IdentityDependencies } from './auth/types.js'
 import { createAgentDependencies, type AgentDependencies } from './agent/dependencies.js'
+import { createCatalogDependencies, type CatalogDependencies } from './catalog/dependencies.js'
 import { env, type ApiEnv } from './config/env.js'
+import {
+  createEvaluationDependencies,
+  type EvaluationDependencies,
+} from './evaluations/dependencies.js'
 import {
   createKnowledgeDependencies,
   type KnowledgeDependencies,
 } from './knowledge/dependencies.js'
 import { registerAuthRoutes } from './routes/auth.js'
+import { registerCatalogRoutes } from './routes/catalog.js'
+import { registerEvaluationRoutes } from './routes/evaluations.js'
 import { registerHealthRoute } from './routes/health.js'
 import { registerKnowledgeRoutes } from './routes/knowledge.js'
+import { registerOverviewRoutes } from './routes/overview.js'
 import { registerPublicChatRoutes } from './routes/public-chat.js'
+import { registerTicketRoutes } from './routes/tickets.js'
+import { registerWebhookRoutes } from './routes/webhooks.js'
+import { createTicketDependencies, type TicketDependencies } from './tickets/dependencies.js'
+import { createWebhookDependencies, type WebhookDependencies } from './webhooks/dependencies.js'
 
 export interface BuildAppOptions {
   environment?: ApiEnv
   identityDependencies?: IdentityDependencies
   knowledgeDependencies?: KnowledgeDependencies
   agentDependencies?: AgentDependencies
+  ticketDependencies?: TicketDependencies
+  webhookDependencies?: WebhookDependencies
+  evaluationDependencies?: EvaluationDependencies
+  analyticsDependencies?: AnalyticsDependencies
+  catalogDependencies?: CatalogDependencies
   logger?: boolean
 }
 
@@ -37,6 +58,14 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   const agentDependencies =
     options.agentDependencies ??
     createAgentDependencies(environment, knowledgeDependencies.knowledgeService)
+  const ticketDependencies = options.ticketDependencies ?? createTicketDependencies(environment)
+  const webhookDependencies = options.webhookDependencies ?? createWebhookDependencies(environment)
+  const evaluationDependencies =
+    options.evaluationDependencies ??
+    createEvaluationDependencies(environment, agentDependencies.agentService)
+  const analyticsDependencies =
+    options.analyticsDependencies ?? createAnalyticsDependencies(environment)
+  const catalogDependencies = options.catalogDependencies ?? createCatalogDependencies(environment)
   const app = Fastify({
     logger: options.logger ?? environment.NODE_ENV !== 'test',
     bodyLimit: environment.MAX_UPLOAD_BYTES,
@@ -66,14 +95,24 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorateRequest('workspaceAccess', null)
 
   registerHealthRoute(app, environment)
+  registerCatalogRoutes(app, catalogDependencies)
   registerAuthRoutes(app, identityDependencies)
   registerKnowledgeRoutes(app, identityDependencies, knowledgeDependencies)
   registerPublicChatRoutes(app, environment, agentDependencies)
+  registerTicketRoutes(app, identityDependencies, ticketDependencies)
+  registerWebhookRoutes(app, identityDependencies, webhookDependencies)
+  registerEvaluationRoutes(app, identityDependencies, evaluationDependencies)
+  registerOverviewRoutes(app, identityDependencies, analyticsDependencies)
 
   app.addHook('onClose', async () => {
-    await identityDependencies.identityRepository.close()
-    await knowledgeDependencies.knowledgeService.close()
+    await catalogDependencies.catalogRepository.close()
+    await analyticsDependencies.analyticsRepository.close()
+    await evaluationDependencies.evaluationService.close()
+    await webhookDependencies.webhookService.close()
+    await ticketDependencies.ticketService.close()
     await agentDependencies.agentService.close()
+    await knowledgeDependencies.knowledgeService.close()
+    await identityDependencies.identityRepository.close()
   })
 
   app.setNotFoundHandler(async (_request, reply) => {

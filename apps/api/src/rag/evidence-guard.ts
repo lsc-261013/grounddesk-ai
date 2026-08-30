@@ -63,8 +63,10 @@ export const assessEvidence = (
   if (checked.length === 0) return { accepted: [], checked, rejectionReason: 'no_evidence' }
 
   const topSimilarity = checked[0]?.vectorSimilarity ?? -1
-  const topHasKeyword = checked[0]?.keywordRank !== null
-  if (topSimilarity < threshold && !topHasKeyword) {
+  const topKeywordScore = checked[0]?.keywordScore ?? 0
+  const hasStrongHybridSignal =
+    checked[0]?.keywordRank !== null && topKeywordScore >= 0.25 && topSimilarity >= threshold - 0.1
+  if (topSimilarity < threshold && !hasStrongHybridSignal) {
     return { accepted: [], checked, rejectionReason: 'low_confidence' }
   }
 

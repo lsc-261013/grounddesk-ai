@@ -12,7 +12,7 @@ const action = actionSchema.parse(process.argv[2])
 const INITIAL_MIGRATION_VERSION = '202608290001_initial_schema'
 const repositoryRoot = resolve(process.cwd(), '../..')
 const migrationsDirectory = resolve(repositoryRoot, 'supabase/migrations')
-const seedPath = resolve(repositoryRoot, 'supabase/seed/001_demo_workspace.sql')
+const seedDirectory = resolve(repositoryRoot, 'supabase/seed')
 
 if (!env.SUPABASE_DB_URL) {
   process.stderr.write('SUPABASE_DB_URL is required to apply database changes.\n')
@@ -28,8 +28,13 @@ if (!env.SUPABASE_DB_URL) {
 
   try {
     if (action === 'seed') {
-      const seedSql = await readFile(seedPath, 'utf8')
-      await database.unsafe(seedSql, [], { prepare: false })
+      const seedFiles = (await readdir(seedDirectory))
+        .filter((fileName) => fileName.endsWith('.sql'))
+        .sort((left, right) => left.localeCompare(right))
+      for (const seedFile of seedFiles) {
+        const seedSql = await readFile(resolve(seedDirectory, seedFile), 'utf8')
+        await database.unsafe(seedSql, [], { prepare: false })
+      }
       process.stdout.write('GroundDesk database seed completed successfully.\n')
     } else {
       await database.unsafe(

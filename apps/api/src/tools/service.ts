@@ -108,7 +108,11 @@ export class DefaultToolExecutionService implements ToolExecutionService {
       }
 
       const item = input.productSku
-        ? order.items.find((candidate) => candidate.sku === input.productSku)
+        ? order.items.find(
+            (candidate) =>
+              candidate.sku.toLowerCase() === input.productSku?.toLowerCase() ||
+              candidate.model.toLowerCase() === input.productSku?.toLowerCase(),
+          )
         : order.items.length === 1
           ? order.items[0]
           : undefined

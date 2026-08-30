@@ -13,7 +13,7 @@ values (
   'Avenlo Demo Workspace',
   'avenlo-demo',
   'zh-CN',
-  0.62,
+  0.60,
   true
 )
 on conflict (id) do update set

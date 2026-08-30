@@ -17,6 +17,11 @@ export const router = createRouter({
       component: () => import('./views/LoginView.vue'),
     },
     {
+      path: '/demo',
+      name: 'demo',
+      component: () => import('./views/DemoView.vue'),
+    },
+    {
       path: '/console',
       component: () => import('./components/ConsoleLayout.vue'),
       meta: { requiresAuth: true },
@@ -35,6 +40,21 @@ export const router = createRouter({
           path: 'playground',
           name: 'console-playground',
           component: () => import('./views/PlaygroundView.vue'),
+        },
+        {
+          path: 'tickets',
+          name: 'console-tickets',
+          component: () => import('./views/TicketsView.vue'),
+        },
+        {
+          path: 'evaluations',
+          name: 'console-evaluations',
+          component: () => import('./views/EvaluationsView.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'console-settings',
+          component: () => import('./views/SettingsView.vue'),
         },
       ],
     },

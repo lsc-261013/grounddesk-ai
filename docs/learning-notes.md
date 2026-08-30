@@ -171,3 +171,47 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 ### 深入追问
 
 如果问流式回答结束后才发现引用不合格怎么办：客户端支持 `replace_answer` 纠正事件，服务端不保存不合格答案为可靠结果，并立即创建工单。若问为什么不先完整生成再展示：那会失去真实首 Token 体验；当前设计在体验和最终一致性之间用流式展示加终态校验折中，同时保留完整审计。
+
+## 里程碑 5：工单、Webhook、可观测性与评测
+
+### 解决什么问题
+
+可信客服不能在“AI 回了一句话”时结束。本模块把拒答转成人工可处理的工单，把外部通知变成签名且可重试的 Webhook，并用确定性评测证明检索、工具与隔离边界确实工作。
+
+### 数据流
+
+拒答或人工请求从 `AgentService` 进入 `tickets`，保存会话摘要、证据 Chunk 与工具调用 ID；数据库触发器在同一事务中生成 Webhook Outbox 记录，后台投递器执行 URL 安全检查、HMAC 签名、超时和有限重试。评测运行读取 `eval_cases`，通过真实或 Mock 执行器逐条执行，并把实际结果与确定性期望写入 `eval_results`。
+
+### 关键文件
+
+- `apps/api/src/tickets/`：角色约束、分配、回复和状态流转；
+- `apps/api/src/webhooks/`：密钥加密、SSRF 防护、签名与 Outbox 投递；
+- `apps/api/src/evaluations/`：执行器、评分、持久化和报告；
+- `apps/api/src/analytics/`：过滤评测流量后的真实运营指标；
+- `supabase/migrations/202608300005_ticket_webhook_outbox.sql`：事务型 Outbox；
+- `supabase/migrations/202608300006_conversation_sources.sql`：运营/评测流量边界；
+- `supabase/seed/002_evaluation_cases.sql`：26 条双语确定性用例。
+
+### 为什么这样设计
+
+工单和 Webhook 使用数据库事务型 Outbox，避免“工单已创建但进程刚好崩溃导致通知永远丢失”。签名密钥只在创建时返回一次，数据库保存 AES-GCM 密文；目标 URL 在保存和每次投递时都重新解析，防止 DNS Rebinding。评测会话标记为 `evaluation`，既保留消息与用量审计，又不污染运营看板、公开额度和客服队列。
+
+### 一个真实问题与修复
+
+真实评测最初只有 21/26。原因不是单一“模型不聪明”，而是规划 JSON 格式、相似度阈值、意图约束和引用格式分别存在边界。逐条查看失败的 `actual` 与消息 `error_type` 后，分别增加 JSON 提取后的 Schema 校验、真实分布阈值、原文参数绑定和一次引用修复重试，最终达到 26/26。过程中没有降低拒答规则。
+
+### 如何手动验证
+
+1. 以管理员运行 `pnpm eval:live`，再执行 `pnpm eval:report`；
+2. 在控制台 Evaluations 展开最新运行，确认 26 条逐项结果来自数据库；
+3. 提出知识库不存在的问题，在 Tickets 查看摘要、证据与接管原因；
+4. 创建 Webhook 后只保存一次签名密钥，向公开测试端点发送测试事件并核对 `X-GroundDesk-Signature`；
+5. 以客服账号登录，确认只能看到分配给自己的工单且无法打开设置写接口。
+
+### 面试时 30 秒解释
+
+“GroundDesk 把低置信度结果转成带证据与工具轨迹的人工工单。外部通知走事务型 Outbox，用 HMAC 签名、超时、重试和 SSRF 防护。质量不是页面写死的数字，而是 26 条双语确定性评测，真实 Provider 最新 26/26；评测流量与运营指标严格分开。”
+
+### 继续追问时怎样深入
+
+可以展开说明 Outbox 的原子性、客服角色的行级可见范围、签名密钥轮换影响、DNS Rebinding 防护、为什么 LLM Judge 不能作为唯一真值，以及如何从失败用例定位到检索、路由、工具或引用校验的具体层级。

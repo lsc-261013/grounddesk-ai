@@ -1,6 +1,11 @@
 import postgres, { type Sql } from 'postgres'
 
-import { localeSchema, type ChatCitation } from '@grounddesk/shared'
+import {
+  conversationSourceSchema,
+  localeSchema,
+  type ChatCitation,
+  type ConversationSource,
+} from '@grounddesk/shared'
 
 import type {
   AgentRepository,
@@ -25,6 +30,7 @@ interface ConversationRow {
   workspaceId: string
   locale: string
   status: 'active' | 'handed_off' | 'closed'
+  source: string
 }
 
 const databaseToolStatus = (
@@ -83,30 +89,44 @@ class PostgresAgentRepository implements AgentRepository {
     sessionHash: string
     requestedConversationId: string | null
     locale: 'zh-CN' | 'en-US'
+    source: ConversationSource
   }): Promise<ConversationRecord | null> {
     if (input.requestedConversationId) {
       const rows = await this.database<ConversationRow[]>`
-        select id, workspace_id as "workspaceId", locale, status
+        select id, workspace_id as "workspaceId", locale, status, source
         from public.conversations
         where id = ${input.requestedConversationId}
           and workspace_id = ${input.workspaceId}
           and anonymous_session_hash = ${input.sessionHash}
+          and source = ${input.source}
         limit 1
       `
       const row = rows[0]
-      return row ? { ...row, locale: localeSchema.parse(row.locale) } : null
+      return row
+        ? {
+            ...row,
+            locale: localeSchema.parse(row.locale),
+            source: conversationSourceSchema.parse(row.source),
+          }
+        : null
     }
 
     const rows = await this.database<ConversationRow[]>`
-      insert into public.conversations (workspace_id, anonymous_session_hash, locale)
-      values (${input.workspaceId}, ${input.sessionHash}, ${input.locale})
-      on conflict (workspace_id, anonymous_session_hash)
+      insert into public.conversations (workspace_id, anonymous_session_hash, locale, source)
+      values (${input.workspaceId}, ${input.sessionHash}, ${input.locale}, ${input.source})
+      on conflict (workspace_id, anonymous_session_hash, source)
         where anonymous_session_hash is not null
       do update set locale = excluded.locale, updated_at = now()
-      returning id, workspace_id as "workspaceId", locale, status
+      returning id, workspace_id as "workspaceId", locale, status, source
     `
     const row = rows[0]
-    return row ? { ...row, locale: localeSchema.parse(row.locale) } : null
+    return row
+      ? {
+          ...row,
+          locale: localeSchema.parse(row.locale),
+          source: conversationSourceSchema.parse(row.source),
+        }
+      : null
   }
 
   async saveUserMessage(
@@ -237,6 +257,35 @@ class PostgresAgentRepository implements AgentRepository {
         ${input.totalLatencyMs}, ${input.usage.available}
       )
     `
+  }
+
+  async saveFeedback(input: {
+    workspaceId: string
+    sessionHash: string
+    conversationId: string
+    messageId: string
+    rating: 'helpful' | 'unhelpful'
+    comment: string | null
+  }): Promise<boolean> {
+    const rows = await this.database<{ id: string }[]>`
+      insert into public.message_feedback (
+        workspace_id, conversation_id, message_id, anonymous_session_hash, rating, comment
+      )
+      select conversation.workspace_id, conversation.id, message.id,
+        conversation.anonymous_session_hash, ${input.rating}, ${input.comment}
+      from public.conversations conversation
+      join public.messages message on message.conversation_id = conversation.id
+      where conversation.workspace_id = ${input.workspaceId}
+        and conversation.id = ${input.conversationId}
+        and conversation.anonymous_session_hash = ${input.sessionHash}
+        and conversation.source <> 'evaluation'
+        and message.id = ${input.messageId}
+        and message.role = 'assistant'
+      on conflict (message_id, anonymous_session_hash) do update set
+        rating = excluded.rating, comment = excluded.comment, updated_at = now()
+      returning id
+    `
+    return rows.length === 1
   }
 
   async close(): Promise<void> {

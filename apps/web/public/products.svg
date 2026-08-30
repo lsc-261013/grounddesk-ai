@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dce2e6"/>
+      <stop offset="0.48" stop-color="#89939e"/>
+      <stop offset="1" stop-color="#39424d"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3c4652"/>
+      <stop offset="1" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7f7f3"/>
+      <stop offset="1" stop-color="#b8c0c3"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#30455f"/>
+      <stop offset="1" stop-color="#101b2a"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+  </defs>
+
+  <symbol id="airwave-s1" viewBox="0 0 320 240">
+    <g filter="url(#shadow)">
+      <rect x="75" y="113" width="170" height="84" rx="38" fill="url(#dark)" stroke="#63707c"/>
+      <path d="M75 150h170" stroke="#68737d" opacity=".5"/>
+      <circle cx="160" cy="157" r="4" fill="#39e6a3"/>
+      <g fill="url(#metal)" stroke="#202833" stroke-width="3">
+        <path d="M112 53c-19 0-29 15-26 32 3 13 12 20 24 22l4 43c1 8 13 8 14 0l4-55c2-22-4-42-20-42z"/>
+        <path d="M208 53c19 0 29 15 26 32-3 13-12 20-24 22l-4 43c-1 8-13 8-14 0l-4-55c-2-22 4-42 20-42z"/>
+      </g>
+    </g>
+  </symbol>
+
+  <symbol id="airwave-s1-pro" viewBox="0 0 320 240">
+    <g filter="url(#shadow)">
+      <rect x="70" y="119" width="180" height="79" rx="26" fill="url(#metal)" stroke="#aab2ba"/>
+      <path d="M70 151h180" stroke="#5d6670" opacity=".55"/>
+      <rect x="145" y="181" width="30" height="3" rx="1.5" fill="#39e6a3"/>
+      <g fill="url(#dark)" stroke="#75808b" stroke-width="3">
+        <path d="M107 46c-17 0-27 14-25 30 2 14 11 22 23 24l7 50c1 8 13 8 14-1l4-59c1-26-7-44-23-44z"/>
+        <path d="M213 46c17 0 27 14 25 30-2 14-11 22-23 24l-7 50c-1 8-13 8-14-1l-4-59c-1-26 7-44 23-44z"/>
+      </g>
+    </g>
+  </symbol>
+
+  <symbol id="orbit-h5" viewBox="0 0 320 240">
+    <g fill="none" stroke-linecap="round" filter="url(#shadow)">
+      <path d="M87 133V99c0-52 31-76 73-76s73 24 73 76v34" stroke="url(#metal)" stroke-width="19"/>
+      <rect x="58" y="112" width="62" height="93" rx="28" fill="url(#navy)" stroke="#586b82"/>
+      <rect x="200" y="112" width="62" height="93" rx="28" fill="url(#navy)" stroke="#586b82"/>
+      <path d="M91 137v45M229 137v45" stroke="#6f8197" stroke-width="3" opacity=".65"/>
+    </g>
+  </symbol>
+
+  <symbol id="flux-67" viewBox="0 0 320 240">
+    <g filter="url(#shadow)">
+      <rect x="94" y="55" width="132" height="135" rx="20" fill="url(#light)" stroke="#ccd1d2"/>
+      <rect x="121" y="79" width="78" height="49" rx="12" fill="#20262c"/>
+      <rect x="137" y="93" width="14" height="7" rx="3.5" fill="#7c8790"/>
+      <rect x="169" y="93" width="14" height="7" rx="3.5" fill="#7c8790"/>
+      <rect x="153" y="109" width="14" height="6" rx="3" fill="#7c8790"/>
+      <path d="M226 91h24M226 116h24" stroke="#a7adae" stroke-width="8" stroke-linecap="round"/>
+      <text x="160" y="160" text-anchor="middle" fill="#58616a" font-family="sans-serif" font-size="17" font-weight="700">67W</text>
+    </g>
+  </symbol>
+
+  <symbol id="flux-100" viewBox="0 0 320 240">
+    <g filter="url(#shadow)">
+      <rect x="82" y="42" width="156" height="158" rx="21" fill="url(#dark)" stroke="#5d6873"/>
+      <rect x="115" y="67" width="90" height="59" rx="12" fill="#11161c" stroke="#515b66"/>
+      <g fill="#8a949e">
+        <rect x="130" y="84" width="16" height="7" rx="3.5"/><rect x="174" y="84" width="16" height="7" rx="3.5"/>
+        <rect x="130" y="104" width="16" height="7" rx="3.5"/><rect x="174" y="104" width="16" height="7" rx="3.5"/>
+      </g>
+      <path d="M238 89h24M238 118h24" stroke="#78828c" stroke-width="8" stroke-linecap="round"/>
+      <text x="160" y="165" text-anchor="middle" fill="#aeb6be" font-family="sans-serif" font-size="18" font-weight="700">100W</text>
+    </g>
+  </symbol>
+
+  <symbol id="linkcore-c240" viewBox="0 0 320 240">
+    <g fill="none" stroke-linecap="round" filter="url(#shadow)">
+      <path d="M72 137c24 51 95 48 111 4 13-35-23-60-42-34-18 26 21 55 59 32 21-13 32-37 45-56" stroke="#2e3742" stroke-width="13"/>
+      <g fill="url(#metal)" stroke="#404a54" stroke-width="2">
+        <rect x="47" y="113" width="48" height="31" rx="9"/><rect x="225" y="61" width="48" height="31" rx="9"/>
+      </g>
+      <path d="M59 123h24M237 71h24" stroke="#1e252d" stroke-width="5"/>
+    </g>
+  </symbol>
+
+  <symbol id="reserve-10k" viewBox="0 0 320 240">
+    <g filter="url(#shadow)">
+      <rect x="83" y="40" width="154" height="166" rx="25" fill="url(#dark)" stroke="#5d6873"/>
+      <rect x="105" y="63" width="110" height="43" rx="12" fill="#11161c" stroke="#48525d"/>
+      <text x="160" y="91" text-anchor="middle" fill="#39e6a3" font-family="monospace" font-size="21">78%</text>
+      <circle cx="160" cy="156" r="25" fill="none" stroke="#76818c" stroke-width="2"/>
+      <circle cx="160" cy="156" r="4" fill="#697580"/>
+    </g>
+  </symbol>
+
+  <symbol id="dockline-6" viewBox="0 0 320 240">
+    <g filter="url(#shadow)">
+      <path d="M54 155c0-12 10-21 22-21h168c12 0 22 9 22 21v33H54z" fill="url(#metal)" stroke="#727d87"/>
+      <path d="M76 155h168" stroke="#d3d8dc" opacity=".5"/>
+      <g fill="#1f2730" stroke="#8d969e">
+        <circle cx="94" cy="151" r="27"/><circle cx="160" cy="151" r="27"/><circle cx="226" cy="151" r="27"/>
+      </g>
+      <g fill="none" stroke="#39e6a3" stroke-width="2" opacity=".7">
+        <circle cx="94" cy="151" r="14"/><circle cx="160" cy="151" r="14"/><circle cx="226" cy="151" r="14"/>
+      </g>
+      <path d="M132 134V64c0-11 9-20 20-20h16c11 0 20 9 20 20v70" fill="none" stroke="url(#metal)" stroke-width="13"/>
+    </g>
+  </symbol>
+</svg>

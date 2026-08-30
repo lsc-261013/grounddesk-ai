@@ -31,6 +31,10 @@ class StreamingAgentService implements AgentService {
     return Promise.resolve({ conversationId: CONVERSATION_ID, events: events() })
   }
 
+  submitFeedback(): Promise<boolean> {
+    return Promise.resolve(true)
+  }
+
   close(): Promise<void> {
     return Promise.resolve()
   }
@@ -59,6 +63,7 @@ describe('public chat SSE route', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/v1/public/workspaces/avenlo-demo/chat/stream',
+      headers: { origin: 'http://localhost:5173' },
       payload: {
         sessionId: '90000000-0000-4000-8000-000000000001',
         message: 'What is the return window?',
@@ -68,6 +73,8 @@ describe('public chat SSE route', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.headers['content-type']).toContain('text/event-stream')
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173')
+    expect(response.headers['access-control-allow-credentials']).toBe('true')
     expect(response.body).toContain('"stage":"understanding"')
     expect(response.body).toContain('Grounded answer [1].')
     expect(response.body).not.toContain('reasoning_content')
@@ -83,5 +90,22 @@ describe('public chat SSE route', () => {
 
     expect(response.statusCode).toBe(400)
     expect(response.json()).toMatchObject({ error: 'validation_failed' })
+  })
+
+  it('accepts feedback only through the validated public message boundary', async () => {
+    const app = await createApp()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/public/workspaces/avenlo-demo/chat/feedback',
+      payload: {
+        sessionId: '90000000-0000-4000-8000-000000000001',
+        conversationId: CONVERSATION_ID,
+        messageId: MESSAGE_ID,
+        rating: 'helpful',
+      },
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ accepted: true })
   })
 })

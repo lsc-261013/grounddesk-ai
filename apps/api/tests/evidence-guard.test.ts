@@ -42,6 +42,15 @@ describe('RAG evidence safety gates', () => {
     expect(assessment.rejectionReason).toBe('low_confidence')
   })
 
+  it('does not let a weak brand-name keyword hit override low vector similarity', () => {
+    const assessment = assessEvidence(
+      [evidence({ vectorSimilarity: 0.54, keywordRank: 1, keywordScore: 0.1 })],
+      0.6,
+    )
+
+    expect(assessment.rejectionReason).toBe('low_confidence')
+  })
+
   it('detects contradictory duration facts for the same policy section', () => {
     const conflict = detectEvidenceConflict([
       evidence(),

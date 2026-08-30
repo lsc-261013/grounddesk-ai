@@ -1,9 +1,15 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 
-import { chatStreamEventSchema, publicChatRequestSchema } from '@grounddesk/shared'
+import {
+  chatStreamEventSchema,
+  publicChatFeedbackInputSchema,
+  publicChatFeedbackResponseSchema,
+  publicChatRequestSchema,
+} from '@grounddesk/shared'
 
 import type { AgentDependencies } from '../agent/dependencies.js'
+import { PublicChatError } from '../agent/errors.js'
 import type { ApiEnv } from '../config/env.js'
 
 const workspaceParamsSchema = z.object({
@@ -15,6 +21,27 @@ export const registerPublicChatRoutes = (
   environment: ApiEnv,
   dependencies: AgentDependencies,
 ): void => {
+  app.post(
+    '/v1/public/workspaces/:workspaceSlug/chat/feedback',
+    {
+      config: {
+        rateLimit: {
+          max: environment.PUBLIC_CHAT_RATE_LIMIT,
+          timeWindow: environment.PUBLIC_CHAT_RATE_WINDOW_MS,
+        },
+      },
+    },
+    async (request) => {
+      const { workspaceSlug } = workspaceParamsSchema.parse(request.params)
+      const input = publicChatFeedbackInputSchema.parse(request.body)
+      const accepted = await dependencies.agentService.submitFeedback(workspaceSlug, input)
+      if (!accepted) {
+        throw new PublicChatError('The feedback target is not available.', 404, 'not_found')
+      }
+      return publicChatFeedbackResponseSchema.parse({ accepted: true })
+    },
+  )
+
   app.post(
     '/v1/public/workspaces/:workspaceSlug/chat/stream',
     {
@@ -36,6 +63,10 @@ export const registerPublicChatRoutes = (
       reply.raw.setHeader('Cache-Control', 'no-cache, no-transform')
       reply.raw.setHeader('Connection', 'keep-alive')
       reply.raw.setHeader('X-Accel-Buffering', 'no')
+      // Fastify lifecycle hooks no longer decorate the response after hijack.
+      reply.raw.setHeader('Access-Control-Allow-Origin', environment.WEB_ORIGIN)
+      reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
+      reply.raw.setHeader('Vary', 'Origin')
       reply.raw.flushHeaders()
 
       try {

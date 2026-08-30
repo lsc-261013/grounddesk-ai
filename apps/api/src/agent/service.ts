@@ -5,6 +5,8 @@ import {
   type AgentIntent,
   type ChatCitation,
   type ChatStreamEvent,
+  type ConversationSource,
+  type PublicChatFeedbackInput,
   type PublicChatRequest,
   type RetrievalEvidence,
   type ToolResultStatus,
@@ -12,6 +14,7 @@ import {
 } from '@grounddesk/shared'
 
 import type { AgentPlanResult, GenerationProvider, ProviderUsage } from '../generation/types.js'
+import { estimateGenerationCostUsd } from '../generation/cost.js'
 import type { KnowledgeService } from '../knowledge/service.js'
 import {
   assessEvidence,
@@ -23,9 +26,11 @@ import {
 import type { ToolExecutionService } from '../tools/types.js'
 import { chatCopy } from './copy.js'
 import { PublicChatError } from './errors.js'
+import { constrainAgentPlan, shouldUseModelPlanner } from './plan-constraints.js'
 import type {
   AgentRepository,
   ConversationRecord,
+  HandoffInput,
   PublicWorkspaceConfig,
   RetrievalLogInput,
 } from './repository.js'
@@ -33,6 +38,8 @@ import type {
 interface AgentServiceOptions {
   dailyRequestLimit: number
   dailyTokenLimit: number
+  inputCostPerMillionUsd: number
+  outputCostPerMillionUsd: number
 }
 
 export interface OpenChatResult {
@@ -41,7 +48,12 @@ export interface OpenChatResult {
 }
 
 export interface AgentService {
-  openPublicChat(workspaceSlug: string, input: PublicChatRequest): Promise<OpenChatResult>
+  openPublicChat(
+    workspaceSlug: string,
+    input: PublicChatRequest,
+    options?: { quotaExempt?: boolean; source?: ConversationSource },
+  ): Promise<OpenChatResult>
+  submitFeedback(workspaceSlug: string, input: PublicChatFeedbackInput): Promise<boolean>
   close(): Promise<void>
 }
 
@@ -50,6 +62,8 @@ interface RunContext {
   conversation: ConversationRecord
   input: PublicChatRequest
   startedAt: number
+  quotaExempt: boolean
+  source: ConversationSource
 }
 
 interface GenerationOutcome {
@@ -125,28 +139,36 @@ export class DefaultAgentService implements AgentService {
     private readonly options: AgentServiceOptions,
   ) {}
 
-  async openPublicChat(workspaceSlug: string, input: PublicChatRequest): Promise<OpenChatResult> {
+  async openPublicChat(
+    workspaceSlug: string,
+    input: PublicChatRequest,
+    options: { quotaExempt?: boolean; source?: ConversationSource } = {},
+  ): Promise<OpenChatResult> {
     const workspace = await this.repository.getPublicWorkspace(workspaceSlug)
     if (!workspace)
       throw new PublicChatError('The public Demo Workspace does not exist.', 404, 'not_found')
-    const withinQuota = await this.repository.reserveDemoRequest(
-      workspace.id,
-      this.options.dailyRequestLimit,
-      this.options.dailyTokenLimit,
-    )
-    if (!withinQuota) {
-      throw new PublicChatError(
-        'The public Demo has reached its daily usage limit. Please try again tomorrow.',
-        429,
-        'demo_quota_exceeded',
+    if (!options.quotaExempt) {
+      const withinQuota = await this.repository.reserveDemoRequest(
+        workspace.id,
+        this.options.dailyRequestLimit,
+        this.options.dailyTokenLimit,
       )
+      if (!withinQuota) {
+        throw new PublicChatError(
+          'The public Demo has reached its daily usage limit. Please try again tomorrow.',
+          429,
+          'demo_quota_exceeded',
+        )
+      }
     }
 
+    const source = options.source ?? 'public_demo'
     const conversation = await this.repository.getOrCreateConversation({
       workspaceId: workspace.id,
       sessionHash: hashSession(input.sessionId),
       requestedConversationId: input.conversationId ?? null,
       locale: input.locale,
+      source,
     })
     if (!conversation) {
       throw new PublicChatError(
@@ -161,8 +183,28 @@ export class DefaultAgentService implements AgentService {
     await this.repository.saveUserMessage(workspace.id, conversation.id, input.message)
     return {
       conversationId: conversation.id,
-      events: this.run({ workspace, conversation, input, startedAt: performance.now() }),
+      events: this.run({
+        workspace,
+        conversation,
+        input,
+        startedAt: performance.now(),
+        quotaExempt: options.quotaExempt === true,
+        source,
+      }),
     }
+  }
+
+  async submitFeedback(workspaceSlug: string, input: PublicChatFeedbackInput): Promise<boolean> {
+    const workspace = await this.repository.getPublicWorkspace(workspaceSlug)
+    if (!workspace) return false
+    return this.repository.saveFeedback({
+      workspaceId: workspace.id,
+      sessionHash: hashSession(input.sessionId),
+      conversationId: input.conversationId,
+      messageId: input.messageId,
+      rating: input.rating,
+      comment: input.comment ?? null,
+    })
   }
 
   async *run(context: RunContext): AsyncGenerator<ChatStreamEvent, void, undefined> {
@@ -206,19 +248,33 @@ export class DefaultAgentService implements AgentService {
     }
 
     let planning: AgentPlanResult
-    try {
-      planning = await this.generation.plan(input.message, input.locale)
-    } catch {
-      yield stage('understanding', 'failed')
-      yield* this.finishRefusal(
-        context,
-        'human_handoff',
-        chatCopy[input.locale].providerFailure,
-        'planning_failed',
-        [],
-      )
-      return
+    if (shouldUseModelPlanner(input.message)) {
+      try {
+        planning = await this.generation.plan(input.message, input.locale)
+      } catch {
+        yield stage('understanding', 'failed')
+        yield* this.finishRefusal(
+          context,
+          'human_handoff',
+          chatCopy[input.locale].providerFailure,
+          'planning_failed',
+          [],
+        )
+        return
+      }
+    } else {
+      planning = {
+        plan: {
+          intent: 'knowledge_answer',
+          normalizedQuestion: input.message,
+          missingFields: [],
+          toolCall: null,
+        },
+        providerRequestId: null,
+        usage: EMPTY_USAGE,
+      }
     }
+    planning = { ...planning, plan: constrainAgentPlan(planning.plan, input.message) }
     yield stage('understanding', 'completed')
 
     if (planning.plan.intent === 'human_handoff') {
@@ -327,10 +383,8 @@ export class DefaultAgentService implements AgentService {
       refused = true
       handedOff = true
       errorType = generation.errorType ?? 'citation_validation_failed'
-      yield event({ type: 'replace_answer', content: finalAnswer })
-      await this.repository.createHandoff({
-        workspaceId: context.workspace.id,
-        conversationId: context.conversation.id,
+      yield event({ type: 'replace_answer', content: finalAnswer, citations: [] })
+      await this.createHandoff(context, {
         summary: redactQuery(context.input.message).slice(0, 300),
         reason: errorType,
         evidenceChunkIds: assessment.accepted.map((candidate) => candidate.chunkId),
@@ -351,7 +405,7 @@ export class DefaultAgentService implements AgentService {
       firstTokenLatencyMs: generation.firstTokenLatencyMs,
       totalLatencyMs: Math.round(performance.now() - context.startedAt),
       usage,
-      estimatedCostUsd: null,
+      estimatedCostUsd: this.estimateCostUsd(usage),
       providerRequestId: generation.providerRequestId ?? planning.providerRequestId,
       errorType,
     })
@@ -395,7 +449,7 @@ export class DefaultAgentService implements AgentService {
         firstTokenLatencyMs: Math.round(performance.now() - context.startedAt),
         totalLatencyMs: Math.round(performance.now() - context.startedAt),
         usage: planning.usage,
-        estimatedCostUsd: null,
+        estimatedCostUsd: this.estimateCostUsd(planning.usage),
         providerRequestId: planning.providerRequestId,
         errorType: null,
       })
@@ -494,9 +548,7 @@ export class DefaultAgentService implements AgentService {
             ? chatCopy[context.input.locale].emailMismatch
             : chatCopy[context.input.locale].toolFailure
       if (status === 'failed') {
-        await this.repository.createHandoff({
-          workspaceId: context.workspace.id,
-          conversationId: context.conversation.id,
+        await this.createHandoff(context, {
           summary: redactQuery(context.input.message).slice(0, 300),
           reason: 'tool_failed_after_retry',
           evidenceChunkIds: [],
@@ -515,7 +567,7 @@ export class DefaultAgentService implements AgentService {
         firstTokenLatencyMs: Math.round(performance.now() - context.startedAt),
         totalLatencyMs: Math.round(performance.now() - context.startedAt),
         usage: planning.usage,
-        estimatedCostUsd: null,
+        estimatedCostUsd: this.estimateCostUsd(planning.usage),
         providerRequestId: planning.providerRequestId,
         errorType: status === 'failed' ? 'tool_failed_after_retry' : null,
       })
@@ -540,9 +592,7 @@ export class DefaultAgentService implements AgentService {
       answer = chatCopy[context.input.locale].providerFailure
       handedOff = true
       yield event({ type: 'replace_answer', content: answer })
-      await this.repository.createHandoff({
-        workspaceId: context.workspace.id,
-        conversationId: context.conversation.id,
+      await this.createHandoff(context, {
         summary: redactQuery(context.input.message).slice(0, 300),
         reason: generation.errorType,
         evidenceChunkIds: [],
@@ -556,9 +606,7 @@ export class DefaultAgentService implements AgentService {
       handedOff = true
       answer = `${answer}\n\n${chatCopy[context.input.locale].returnRequested}`
       yield event({ type: 'replace_answer', content: answer })
-      await this.repository.createHandoff({
-        workspaceId: context.workspace.id,
-        conversationId: context.conversation.id,
+      await this.createHandoff(context, {
         summary: redactQuery(context.input.message).slice(0, 300),
         reason: 'return_request_pending_approval',
         evidenceChunkIds: [],
@@ -579,7 +627,7 @@ export class DefaultAgentService implements AgentService {
       firstTokenLatencyMs: generation.firstTokenLatencyMs,
       totalLatencyMs: Math.round(performance.now() - context.startedAt),
       usage,
-      estimatedCostUsd: null,
+      estimatedCostUsd: this.estimateCostUsd(usage),
       providerRequestId: generation.providerRequestId ?? planning.providerRequestId,
       errorType,
     })
@@ -637,8 +685,44 @@ export class DefaultAgentService implements AgentService {
         }
       }
       if (!answer.trim()) throw new Error('The generation provider returned an empty answer.')
+      let validation = validateAnswerCitations(answer, evidence.length)
+      if (evidence.length > 0 && !validation.valid) {
+        let repairedAnswer = ''
+        let repairedUsage = EMPTY_USAGE
+        let repairedRequestId: string | null = null
+        try {
+          for await (const chunk of this.generation.streamGroundedAnswer({
+            locale: context.input.locale,
+            question: context.input.message,
+            intent,
+            evidence,
+            toolResult,
+            citationRepair: true,
+          })) {
+            if (chunk.type === 'usage') {
+              repairedUsage = chunk.usage
+              repairedRequestId = chunk.providerRequestId
+            } else {
+              repairedAnswer += chunk.delta
+            }
+          }
+          const repairedValidation = validateAnswerCitations(repairedAnswer, evidence.length)
+          usage = combineUsage(usage, repairedUsage)
+          providerRequestId = repairedRequestId ?? providerRequestId
+          if (repairedAnswer.trim() && repairedValidation.valid) {
+            answer = repairedAnswer
+            validation = repairedValidation
+            yield event({
+              type: 'replace_answer',
+              content: repairedAnswer,
+              citations: createCitations(validation.ordinals, evidence),
+            })
+          }
+        } catch {
+          // The outer citation guard rejects the original invalid answer.
+        }
+      }
       yield stage('generating', 'completed')
-      const validation = validateAnswerCitations(answer, evidence.length)
       return {
         answer,
         citations: evidence.length > 0 ? createCitations(validation.ordinals, evidence) : [],
@@ -683,7 +767,7 @@ export class DefaultAgentService implements AgentService {
       firstTokenLatencyMs: elapsed,
       totalLatencyMs: elapsed,
       usage,
-      estimatedCostUsd: null,
+      estimatedCostUsd: this.estimateCostUsd(usage),
       providerRequestId: planning?.providerRequestId ?? null,
       errorType: reason,
     })
@@ -691,9 +775,7 @@ export class DefaultAgentService implements AgentService {
       await this.repository.saveCitations(context.workspace.id, messageId, citations)
     }
     if (retrievalLog) await this.repository.saveRetrievalLog({ ...retrievalLog, messageId })
-    await this.repository.createHandoff({
-      workspaceId: context.workspace.id,
-      conversationId: context.conversation.id,
+    await this.createHandoff(context, {
       summary: redactQuery(context.input.message).slice(0, 300),
       reason,
       evidenceChunkIds: evidence.map((candidate) => candidate.chunkId),
@@ -711,7 +793,7 @@ export class DefaultAgentService implements AgentService {
     firstTokenLatencyMs: number | null,
   ): Promise<void> {
     const totalLatencyMs = Math.round(performance.now() - context.startedAt)
-    if (usage.totalTokens !== null) {
+    if (!context.quotaExempt && usage.totalTokens !== null) {
       await this.repository.addDemoTokens(context.workspace.id, usage.totalTokens)
     }
     if (!usage.available) return
@@ -721,10 +803,26 @@ export class DefaultAgentService implements AgentService {
       provider: this.generation.provider,
       model: this.generation.model,
       usage,
-      estimatedCostUsd: null,
+      estimatedCostUsd: this.estimateCostUsd(usage),
       firstTokenLatencyMs,
       totalLatencyMs,
     })
+  }
+
+  private async createHandoff(
+    context: RunContext,
+    input: Omit<HandoffInput, 'workspaceId' | 'conversationId'>,
+  ): Promise<void> {
+    if (context.source === 'evaluation') return
+    await this.repository.createHandoff({
+      workspaceId: context.workspace.id,
+      conversationId: context.conversation.id,
+      ...input,
+    })
+  }
+
+  private estimateCostUsd(usage: ProviderUsage): number | null {
+    return estimateGenerationCostUsd(usage, this.options)
   }
 
   async close(): Promise<void> {

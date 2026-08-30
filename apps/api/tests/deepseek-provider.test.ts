@@ -95,4 +95,39 @@ describe('DeepSeek provider adapter', () => {
     ])
     expect(JSON.stringify(chunks)).not.toContain('hidden')
   })
+
+  it('accepts fenced planning JSON and forces the return tool for a credentialed return request', async () => {
+    let requestBody: Record<string, unknown> | null = null
+    const request: typeof fetch = (_url, init) => {
+      if (typeof init?.body !== 'string') throw new Error('Expected a JSON request body.')
+      requestBody = JSON.parse(init.body) as Record<string, unknown>
+      return Promise.resolve(
+        jsonResponse({
+          choices: [
+            {
+              message: {
+                content:
+                  '```json\n{"intent":"knowledge_answer","normalizedQuestion":"Warranty?","missingFields":[]}\n```',
+              },
+            },
+          ],
+        }),
+      )
+    }
+    const provider = new DeepSeekGenerationProvider(
+      'deepseek-v4-flash',
+      'https://api.deepseek.com',
+      'test-key',
+      5_000,
+      request,
+    )
+
+    await provider.plan('Can I return order GD-2026D019 with demo.customer19@example.com?', 'en-US')
+
+    expect(requestBody).not.toBeNull()
+    expect(requestBody && Reflect.get(requestBody, 'tool_choice')).toEqual({
+      type: 'function',
+      function: { name: 'return_eligibility' },
+    })
+  })
 })

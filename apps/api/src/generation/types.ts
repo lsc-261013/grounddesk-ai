@@ -49,6 +49,7 @@ export interface GroundedGenerationInput {
   intent: AgentIntent
   evidence: RetrievalEvidence[]
   toolResult: Record<string, unknown> | null
+  citationRepair?: boolean
 }
 
 export type GenerationStreamChunk =

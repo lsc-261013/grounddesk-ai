@@ -1,4 +1,11 @@
-import type { AgentIntent, ChatCitation, Locale, ToolResultStatus } from '@grounddesk/shared'
+import type {
+  AgentIntent,
+  ChatCitation,
+  ConversationSource,
+  FeedbackRating,
+  Locale,
+  ToolResultStatus,
+} from '@grounddesk/shared'
 
 import type { ProviderUsage } from '../generation/types.js'
 
@@ -14,6 +21,7 @@ export interface ConversationRecord {
   workspaceId: string
   locale: Locale
   status: 'active' | 'handed_off' | 'closed'
+  source: ConversationSource
 }
 
 export interface SaveAssistantMessageInput {
@@ -91,6 +99,7 @@ export interface AgentRepository {
     sessionHash: string
     requestedConversationId: string | null
     locale: Locale
+    source: ConversationSource
   }): Promise<ConversationRecord | null>
   saveUserMessage(workspaceId: string, conversationId: string, content: string): Promise<string>
   saveAssistantMessage(input: SaveAssistantMessageInput): Promise<string>
@@ -99,5 +108,13 @@ export interface AgentRepository {
   saveToolCall(input: ToolCallLogInput): Promise<string>
   createHandoff(input: HandoffInput): Promise<string>
   saveUsageEvent(input: UsageEventInput): Promise<void>
+  saveFeedback(input: {
+    workspaceId: string
+    sessionHash: string
+    conversationId: string
+    messageId: string
+    rating: FeedbackRating
+    comment: string | null
+  }): Promise<boolean>
   close(): Promise<void>
 }

@@ -1,10 +1,12 @@
 import {
   chatStreamEventSchema,
+  publicChatFeedbackResponseSchema,
   type ChatCitation,
   type ChatStage,
   type ChatStageStatus,
   type ChatStreamEvent,
   type Locale,
+  type FeedbackRating,
 } from '@grounddesk/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -34,6 +36,7 @@ export interface ChatMessageView {
   streaming: boolean
   refused: boolean
   handedOff: boolean
+  feedback: FeedbackRating | null
 }
 
 const getSessionId = (): string => {
@@ -112,6 +115,7 @@ export const useChatStore = defineStore('chat', () => {
     }
     if (streamEvent.type === 'replace_answer') {
       message.content = streamEvent.content
+      if (streamEvent.citations) message.citations = [...streamEvent.citations]
       return
     }
     if (streamEvent.type === 'done') {
@@ -139,6 +143,7 @@ export const useChatStore = defineStore('chat', () => {
       streaming: false,
       refused: false,
       handedOff: false,
+      feedback: null,
     })
     const assistant: ChatMessageView = {
       id: crypto.randomUUID(),
@@ -150,6 +155,7 @@ export const useChatStore = defineStore('chat', () => {
       streaming: true,
       refused: false,
       handedOff: false,
+      feedback: null,
     }
     messages.value.push(assistant)
 
@@ -203,6 +209,34 @@ export const useChatStore = defineStore('chat', () => {
     error.value = null
   }
 
+  const submitFeedback = async (
+    message: ChatMessageView,
+    rating: FeedbackRating,
+  ): Promise<void> => {
+    if (!conversationId.value || message.role !== 'assistant' || message.streaming) return
+    error.value = null
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/v1/public/workspaces/avenlo-demo/chat/feedback`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionId.value,
+            conversationId: conversationId.value,
+            messageId: message.id,
+            rating,
+          }),
+        },
+      )
+      if (!response.ok) throw new Error(await readErrorMessage(response))
+      publicChatFeedbackResponseSchema.parse(await response.json())
+      message.feedback = rating
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'Feedback submission failed.'
+    }
+  }
+
   return {
     conversationId,
     error,
@@ -211,5 +245,6 @@ export const useChatStore = defineStore('chat', () => {
     messages,
     resetConversation,
     sendMessage,
+    submitFeedback,
   }
 })

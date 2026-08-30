@@ -21,7 +21,12 @@
     "knowledge:reindex": "tsx src/knowledge/bootstrap-demo-knowledge.ts --reindex",
     "knowledge:smoke": "tsx src/knowledge/smoke-retrieval.ts",
     "knowledge:http-smoke": "tsx src/knowledge/smoke-http.ts",
-    "agent:smoke": "tsx src/agent/smoke-agent.ts"
+    "knowledge:diagnose": "tsx src/knowledge/diagnose-query.ts",
+    "agent:smoke": "tsx src/agent/smoke-agent.ts",
+    "tickets:smoke": "tsx src/tickets/smoke-tickets.ts",
+    "eval:smoke": "tsx src/evaluations/smoke-evaluation.ts",
+    "eval:live": "tsx src/evaluations/smoke-evaluation.ts --live",
+    "eval:report": "tsx src/evaluations/report-evaluation.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

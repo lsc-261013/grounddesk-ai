@@ -6,6 +6,8 @@ import {
   CircleDashed,
   RotateCcw,
   ShieldAlert,
+  ThumbsDown,
+  ThumbsUp,
   Wrench,
 } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
@@ -160,6 +162,28 @@ const sourceLocation = (pageStart: number | null, sectionPath: string[]): string
               </summary>
               <blockquote>{{ citation.quote }}</blockquote>
             </details>
+          </div>
+
+          <div v-if="message.role === 'assistant' && !message.streaming" class="answer-feedback">
+            <span>{{ t('playground.feedbackQuestion') }}</span>
+            <button
+              type="button"
+              :class="{ active: message.feedback === 'helpful' }"
+              :aria-label="t('playground.helpful')"
+              :aria-pressed="message.feedback === 'helpful'"
+              @click="chatStore.submitFeedback(message, 'helpful')"
+            >
+              <ThumbsUp :size="13" />
+            </button>
+            <button
+              type="button"
+              :class="{ active: message.feedback === 'unhelpful' }"
+              :aria-label="t('playground.unhelpful')"
+              :aria-pressed="message.feedback === 'unhelpful'"
+              @click="chatStore.submitFeedback(message, 'unhelpful')"
+            >
+              <ThumbsDown :size="13" />
+            </button>
           </div>
         </article>
       </div>

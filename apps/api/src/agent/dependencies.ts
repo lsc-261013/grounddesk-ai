@@ -18,6 +18,12 @@ class UnavailableAgentService implements AgentService {
     )
   }
 
+  submitFeedback(): Promise<boolean> {
+    return Promise.reject(
+      new ServiceUnavailableError('Public chat feedback is unavailable in offline mode.'),
+    )
+  }
+
   close(): Promise<void> {
     return Promise.resolve()
   }
@@ -48,6 +54,8 @@ export const createAgentDependencies = (
     agentService: new DefaultAgentService(agentRepository, knowledgeService, tools, generation, {
       dailyRequestLimit: environment.DEMO_DAILY_REQUEST_LIMIT,
       dailyTokenLimit: environment.DEMO_DAILY_TOKEN_LIMIT,
+      inputCostPerMillionUsd: environment.DEEPSEEK_INPUT_COST_PER_MILLION_USD,
+      outputCostPerMillionUsd: environment.DEEPSEEK_OUTPUT_COST_PER_MILLION_USD,
     }),
   }
 }

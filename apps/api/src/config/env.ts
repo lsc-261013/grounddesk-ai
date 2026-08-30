@@ -30,6 +30,8 @@ const apiEnvSchema = z
     DEEPSEEK_BASE_URL: z.url().default('https://api.deepseek.com'),
     DEEPSEEK_MODEL: z.string().min(1).default('deepseek-v4-flash'),
     DEEPSEEK_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
+    DEEPSEEK_INPUT_COST_PER_MILLION_USD: z.coerce.number().nonnegative().default(0.44),
+    DEEPSEEK_OUTPUT_COST_PER_MILLION_USD: z.coerce.number().nonnegative().default(1.32),
     SILICONFLOW_API_KEY: optionalSecretSchema,
     EMBEDDING_BASE_URL: z.url().default('https://api.siliconflow.cn/v1'),
     EMBEDDING_MODEL: z.string().min(1).default('BAAI/bge-m3'),
