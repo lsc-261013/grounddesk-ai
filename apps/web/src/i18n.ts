@@ -9,9 +9,12 @@ const getInitialLocale = (): Locale => {
   return savedLocale === 'en-US' ? 'en-US' : 'zh-CN'
 }
 
+const initialLocale = getInitialLocale()
+document.documentElement.lang = initialLocale
+
 export const i18n = createI18n({
   legacy: false,
-  locale: getInitialLocale(),
+  locale: initialLocale,
   fallbackLocale: 'en-US',
   messages: {
     'zh-CN': {

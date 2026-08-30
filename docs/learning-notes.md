@@ -215,3 +215,37 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 ### 继续追问时怎样深入
 
 可以展开说明 Outbox 的原子性、客服角色的行级可见范围、签名密钥轮换影响、DNS Rebinding 防护、为什么 LLM Judge 不能作为唯一真值，以及如何从失败用例定位到检索、路由、工具或引用校验的具体层级。
+
+## 里程碑 6：真实浏览器验收与响应式边界
+
+### 解决什么问题
+
+单元测试无法证明用户真的能在浏览器完成登录、刷新保护页、切换语言、使用手机布局或触发真实 Agent。该模块用 Playwright 固化匿名顾客、管理员和客服三种身份的关键旅程，并把真实 AI 链路设为显式 Smoke Test，避免普通 CI 因供应商波动而不稳定。
+
+### 数据流与关键文件
+
+`apps/web/e2e/grounddesk.spec.ts` 通过真实 Chromium 操作 Vue 页面，登录请求经过 Supabase Auth 与 Fastify，业务数据来自真实 Demo Workspace。`apps/web/playwright.config.ts` 管理前后端测试服务、失败截图、Trace 和录像；`apps/web/src/i18n.ts` 负责 Locale 初始化与文档语言同步。
+
+### 为什么这样设计
+
+确定性浏览器用例默认验证双语、reduced motion、390px 横向溢出、会话刷新和角色边界。会消耗外部额度的订单 Tool Call 与无答案接管通过 `E2E_LIVE_AI=true` 单独执行。这样既让 CI 稳定，也保留公开 Demo 使用真实 Provider 的证据。
+
+### 一个真实问题及修复
+
+首轮 E2E 发现语言按钮能立即切成英文，刷新后内容仍为英文，但 `<html lang>` 回到了静态模板的 `zh-CN`。原因是 i18n 读取了持久化 Locale，却没有在应用初始化时同步文档语言。修复为只读取一次 `initialLocale`，同时赋给 Vue I18n 和 `document.documentElement.lang`。测试接入后还发现 Vitest 会误收集 `e2e` 目录，因此将单元测试显式限定为 `tests`，避免两个测试运行器互相执行。
+
+### 如何手动验证
+
+1. 运行 `pnpm test:e2e`，确认三条确定性浏览器用例通过；
+2. 设置 `E2E_LIVE_AI=true` 后运行 Live Demo 用例，观察订单工具和人工工单；
+3. 在 390×844 下打开 `/demo`，确认 `scrollWidth` 不超过视口；
+4. 用客服账号直接访问 `/console/settings`，必须显示无权限状态；
+5. 切换英文并刷新，内容与 `<html lang>` 都必须保持 `en-US`。
+
+### 面试时 30 秒解释
+
+“我没有把 E2E 等同于页面能打开。Playwright 覆盖三种身份、保护页刷新、角色导航、双语持久化、reduced motion 和手机无溢出；真实 AI 用例还会验证订单 Tool Call、低置信度拒答以及工单确实写入后台。外部 Provider 用例显式开启，普通 CI 保持确定性。”
+
+### 继续追问时怎样深入
+
+可以解释为什么 UI 断言关注用户可见的脱敏摘要而不是原始 Tool JSON、为什么真实 Provider 测试不应成为每次提交的硬依赖、如何用 Trace 定位刷新竞态，以及浏览器测试怎样补足 RLS、API 集成测试和纯函数单测之间的空白。

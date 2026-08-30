@@ -8,9 +8,10 @@
     "build": "vue-tsc --noEmit && vite build --configLoader runner",
     "preview": "vite preview --configLoader runner --host 127.0.0.1 --port 4173",
     "typecheck": "vue-tsc --noEmit",
-    "lint": "eslint src tests",
-    "test": "vitest run",
-    "test:unit": "vitest run"
+    "lint": "eslint src tests e2e playwright.config.ts",
+    "test": "vitest run tests",
+    "test:unit": "vitest run tests",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@grounddesk/shared": "workspace:*",
@@ -22,6 +23,7 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^20.0.11",

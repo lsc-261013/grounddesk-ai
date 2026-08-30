@@ -14,6 +14,10 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 
 里程碑 4 已完成：DeepSeek 单 Agent 会在四种受控意图中路由，服务端通过真实 SSE 发送处理阶段和回答 Token。知识回答经过相似度阈值、冲突与引用完整性校验；订单工具验证订单号与邮箱并返回脱敏只读结果；退货资格由版本化确定性规则计算。真实 Smoke Test 已通过知识引用、订单工具、退货规则和无答案人工接管四条链路。
 
+里程碑 5 已完成：站内工单支持分配、回复与状态流转；Webhook 使用事务型 Outbox、HMAC、超时、重试和 SSRF 防护；26 条双语确定性评测覆盖知识、订单、退货、无答案、提示注入与跨 Workspace 隔离，最新真实运行 26/26 通过。
+
+里程碑 6 的核心浏览器验收已完成：Playwright 覆盖双语持久化、reduced motion、390px 响应式、管理员保护页刷新、客服角色边界，以及真实订单 Tool Call 和无答案人工接管链路。
+
 ## 本地启动
 
 ```bash
@@ -50,6 +54,15 @@ pnpm agent:smoke
 ```
 
 `knowledge:smoke` 会调用真实 Embedding 与混合检索；`knowledge:http-smoke` 还会验证登录、Workspace 权限、文档列表、切块预览、内容去重和客服写入拒绝。`agent:smoke` 会调用真实 DeepSeek、SiliconFlow 和 Supabase，产生少量 API 用量，并验证四条核心 Agent 路径。
+
+## 测试与质量门禁
+
+```bash
+pnpm validate
+pnpm test:e2e
+```
+
+`pnpm validate` 依次执行 TypeScript、ESLint、单元/集成测试和生产构建。默认 E2E 不依赖外部模型；需要验证真实公开 Demo 时，在本地设置 `E2E_LIVE_AI=true` 后单独运行 live public demo 用例，该用例会产生少量 DeepSeek 与 SiliconFlow 用量。
 
 演示账号是公开测试资料，不用于真实业务：
 
