@@ -45,6 +45,7 @@ export const EVALUATION_CATEGORIES = [
 ] as const
 export const EVALUATION_RUN_STATUSES = ['queued', 'running', 'completed', 'failed'] as const
 export const CONVERSATION_SOURCES = ['public_demo', 'playground', 'evaluation'] as const
+export const CONVERSATION_STATUSES = ['active', 'handed_off', 'closed'] as const
 export const FEEDBACK_RATINGS = ['helpful', 'unhelpful'] as const
 export const RETURN_ELIGIBILITY_STATUSES = ['eligible', 'ineligible', 'manual_review'] as const
 export const CHAT_STAGES = [

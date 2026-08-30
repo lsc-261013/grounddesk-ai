@@ -4,6 +4,7 @@ import {
   AGENT_INTENTS,
   CHAT_STAGES,
   CHAT_STAGE_STATUSES,
+  CONVERSATION_STATUSES,
   CONVERSATION_SOURCES,
   DOCUMENT_KINDS,
   DOCUMENT_STATUSES,
@@ -35,6 +36,7 @@ export const webhookDeliveryStatusSchema = z.enum(WEBHOOK_DELIVERY_STATUSES)
 export const evaluationCategorySchema = z.enum(EVALUATION_CATEGORIES)
 export const evaluationRunStatusSchema = z.enum(EVALUATION_RUN_STATUSES)
 export const conversationSourceSchema = z.enum(CONVERSATION_SOURCES)
+export const conversationStatusSchema = z.enum(CONVERSATION_STATUSES)
 export const feedbackRatingSchema = z.enum(FEEDBACK_RATINGS)
 export const returnEligibilityStatusSchema = z.enum(RETURN_ELIGIBILITY_STATUSES)
 export const returnReasonSchema = z.enum(RETURN_REASONS)
@@ -223,6 +225,45 @@ export const publicProductListResponseSchema = z.object({
   products: z.array(publicProductSchema),
 })
 
+export const consoleOrderItemSchema = z.object({
+  id: z.uuid(),
+  productId: z.uuid(),
+  sku: z.string().min(1),
+  model: z.string().min(1),
+  nameZh: z.string().min(1),
+  nameEn: z.string().min(1),
+  quantity: z.number().int().positive(),
+  unitPriceCents: z.number().int().nonnegative(),
+  opened: z.boolean(),
+})
+
+export const consoleOrderSchema = z.object({
+  id: z.uuid(),
+  orderNumber: z.string().min(1),
+  customerName: z.string().min(1),
+  customerEmail: z.email(),
+  status: orderStatusSchema,
+  orderedAt: z.iso.datetime(),
+  shippedAt: z.iso.datetime().nullable(),
+  deliveredAt: z.iso.datetime().nullable(),
+  cancelledAt: z.iso.datetime().nullable(),
+  carrier: z.string().nullable(),
+  trackingNumberMasked: z.string().nullable(),
+  shippingCountryCode: z.string().length(2),
+  totalCents: z.number().int().nonnegative(),
+  currency: z.string().length(3),
+  isDemo: z.boolean(),
+  items: z.array(consoleOrderItemSchema),
+  updatedAt: z.iso.datetime(),
+})
+
+export const consoleOrderListResponseSchema = z.object({
+  orders: z.array(consoleOrderSchema),
+  total: z.number().int().nonnegative(),
+})
+export const consoleOrderResponseSchema = z.object({ order: consoleOrderSchema })
+export const orderStatusUpdateInputSchema = z.object({ status: orderStatusSchema })
+
 export const orderLookupToolResultSchema = z.object({
   status: toolResultStatusSchema,
   order: publicOrderSchema.nullable(),
@@ -365,6 +406,97 @@ export const ticketAssignmentInputSchema = z.object({
   priority: ticketPrioritySchema.optional(),
 })
 export const assignableAgentsResponseSchema = z.object({ agents: z.array(ticketAssigneeSchema) })
+
+export const conversationSummarySchema = z.object({
+  id: z.uuid(),
+  locale: localeSchema,
+  status: conversationStatusSchema,
+  source: conversationSourceSchema,
+  messageCount: z.number().int().nonnegative(),
+  latestMessage: z.string().nullable(),
+  lastIntent: agentIntentSchema.nullable(),
+  refused: z.boolean(),
+  handedOff: z.boolean(),
+  ticketId: z.uuid().nullable(),
+  startedAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+})
+
+export const conversationMessageSchema = z.object({
+  id: z.uuid(),
+  role: z.enum(['user', 'assistant', 'tool', 'system']),
+  content: z.string(),
+  intent: agentIntentSchema.nullable(),
+  refused: z.boolean(),
+  handedOff: z.boolean(),
+  firstTokenLatencyMs: z.number().int().nonnegative().nullable(),
+  totalLatencyMs: z.number().int().nonnegative().nullable(),
+  inputTokens: z.number().int().nonnegative().nullable(),
+  outputTokens: z.number().int().nonnegative().nullable(),
+  estimatedCostUsd: z.number().nonnegative().nullable(),
+  citations: z.array(chatCitationSchema),
+  createdAt: z.iso.datetime(),
+})
+
+export const conversationDetailSchema = conversationSummarySchema.extend({
+  messages: z.array(conversationMessageSchema),
+  tools: z.array(ticketToolTraceSchema),
+})
+
+export const conversationListResponseSchema = z.object({
+  conversations: z.array(conversationSummarySchema),
+  total: z.number().int().nonnegative(),
+})
+export const conversationDetailResponseSchema = z.object({
+  conversation: conversationDetailSchema,
+})
+
+export const workspaceSettingsSchema = z.object({
+  id: z.uuid(),
+  name: z.string().min(2).max(80),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  defaultLocale: localeSchema,
+  confidenceThreshold: z.number().min(0).max(1),
+  isDemo: z.boolean(),
+  updatedAt: z.iso.datetime(),
+})
+export const workspaceSettingsResponseSchema = z.object({ workspace: workspaceSettingsSchema })
+export const workspaceSettingsUpdateInputSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  defaultLocale: localeSchema,
+  confidenceThreshold: z.number().min(0.3).max(0.95),
+})
+export const workspaceMemberSchema = z.object({
+  userId: z.uuid(),
+  email: z.email().nullable(),
+  displayName: z.string().min(1).max(80),
+  role: workspaceRoleSchema,
+  createdAt: z.iso.datetime(),
+})
+export const workspaceMemberListResponseSchema = z.object({
+  members: z.array(workspaceMemberSchema),
+})
+export const workspaceMemberCreateInputSchema = z.object({
+  email: z.email().transform((value) => value.toLowerCase()),
+  role: workspaceRoleSchema,
+})
+export const workspaceMemberUpdateInputSchema = z.object({ role: workspaceRoleSchema })
+export const workspaceOnboardingInputSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  defaultLocale: localeSchema,
+})
+export const workspaceOnboardingResponseSchema = z.object({
+  membership: workspaceMembershipSchema,
+})
+export const demoResetResponseSchema = z.object({
+  reset: z.literal(true),
+  completedAt: z.iso.datetime(),
+})
 
 export const webhookEndpointSchema = z.object({
   id: z.uuid(),
@@ -558,7 +690,15 @@ export type EvaluationRun = z.infer<typeof evaluationRunSchema>
 export type EvaluationResult = z.infer<typeof evaluationResultSchema>
 export type PublicEvaluationSummary = z.infer<typeof publicEvaluationSummarySchema>
 export type ConversationSource = z.infer<typeof conversationSourceSchema>
+export type ConversationStatus = z.infer<typeof conversationStatusSchema>
 export type FeedbackRating = z.infer<typeof feedbackRatingSchema>
 export type PublicChatFeedbackInput = z.infer<typeof publicChatFeedbackInputSchema>
 export type OverviewKnowledgeGap = z.infer<typeof overviewKnowledgeGapSchema>
 export type OverviewMetrics = z.infer<typeof overviewMetricsSchema>
+export type ConsoleOrderItem = z.infer<typeof consoleOrderItemSchema>
+export type ConsoleOrder = z.infer<typeof consoleOrderSchema>
+export type ConversationSummary = z.infer<typeof conversationSummarySchema>
+export type ConversationMessage = z.infer<typeof conversationMessageSchema>
+export type ConversationDetail = z.infer<typeof conversationDetailSchema>
+export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>
+export type WorkspaceMember = z.infer<typeof workspaceMemberSchema>

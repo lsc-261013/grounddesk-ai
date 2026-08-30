@@ -58,6 +58,17 @@ class PostgresAgentRepository implements AgentRepository {
     return rows[0] ?? null
   }
 
+  async getWorkspace(workspaceId: string): Promise<PublicWorkspaceConfig | null> {
+    const rows = await this.database<WorkspaceRow[]>`
+      select id, slug, confidence_threshold::double precision as "confidenceThreshold",
+        is_demo as "isDemo"
+      from public.workspaces
+      where id = ${workspaceId}
+      limit 1
+    `
+    return rows[0] ?? null
+  }
+
   async reserveDemoRequest(
     workspaceId: string,
     requestLimit: number,

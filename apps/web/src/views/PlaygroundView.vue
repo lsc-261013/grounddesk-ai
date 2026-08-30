@@ -16,9 +16,11 @@ import { useI18n } from 'vue-i18n'
 import type { Locale } from '@grounddesk/shared'
 
 import { useChatStore } from '../stores/chat'
+import { useAuthStore } from '../stores/auth'
 
 const { locale, t } = useI18n()
 const chatStore = useChatStore()
+const authStore = useAuthStore()
 const draft = ref('')
 const transcript = ref<HTMLElement | null>(null)
 
@@ -39,9 +41,16 @@ watch(
 
 const send = async (example?: string): Promise<void> => {
   const content = example ?? draft.value
-  if (!content.trim()) return
+  const workspaceId = authStore.activeMembership?.workspace.id
+  const accessToken = authStore.accessToken
+  if (!content.trim() || !workspaceId || !accessToken) return
   draft.value = ''
-  await chatStore.sendMessage(content, locale.value as Locale)
+  await chatStore.sendWorkspaceMessage(content, locale.value as Locale, workspaceId, accessToken)
+}
+
+const resetConversation = (): void => {
+  const workspaceId = authStore.activeMembership?.workspace.id
+  if (workspaceId) chatStore.resetWorkspaceConversation(workspaceId)
 }
 
 const sourceLocation = (pageStart: number | null, sectionPath: string[]): string => {
@@ -62,7 +71,7 @@ const sourceLocation = (pageStart: number | null, sectionPath: string[]): string
         <h1>{{ t('playground.title') }}</h1>
         <p>{{ t('playground.description') }}</p>
       </div>
-      <button class="secondary-button" type="button" @click="chatStore.resetConversation">
+      <button class="secondary-button" type="button" @click="resetConversation">
         <RotateCcw :size="16" />{{ t('playground.newConversation') }}
       </button>
     </header>

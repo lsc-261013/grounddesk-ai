@@ -17,6 +17,10 @@ import { createAgentDependencies, type AgentDependencies } from './agent/depende
 import { createCatalogDependencies, type CatalogDependencies } from './catalog/dependencies.js'
 import { env, type ApiEnv } from './config/env.js'
 import {
+  createConversationDependencies,
+  type ConversationDependencies,
+} from './conversations/dependencies.js'
+import {
   createEvaluationDependencies,
   type EvaluationDependencies,
 } from './evaluations/dependencies.js'
@@ -24,17 +28,26 @@ import {
   createKnowledgeDependencies,
   type KnowledgeDependencies,
 } from './knowledge/dependencies.js'
+import { createOrderDependencies, type OrderDependencies } from './orders/dependencies.js'
 import { registerAuthRoutes } from './routes/auth.js'
 import { registerCatalogRoutes } from './routes/catalog.js'
+import { registerConversationRoutes } from './routes/conversations.js'
 import { registerEvaluationRoutes } from './routes/evaluations.js'
 import { registerHealthRoute } from './routes/health.js'
 import { registerKnowledgeRoutes } from './routes/knowledge.js'
 import { registerOverviewRoutes } from './routes/overview.js'
+import { registerOrderRoutes } from './routes/orders.js'
+import { registerPlaygroundRoutes } from './routes/playground.js'
 import { registerPublicChatRoutes } from './routes/public-chat.js'
 import { registerTicketRoutes } from './routes/tickets.js'
 import { registerWebhookRoutes } from './routes/webhooks.js'
+import { registerWorkspaceRoutes } from './routes/workspaces.js'
 import { createTicketDependencies, type TicketDependencies } from './tickets/dependencies.js'
 import { createWebhookDependencies, type WebhookDependencies } from './webhooks/dependencies.js'
+import {
+  createWorkspaceDependencies,
+  type WorkspaceDependencies,
+} from './workspaces/dependencies.js'
 
 export interface BuildAppOptions {
   environment?: ApiEnv
@@ -46,6 +59,9 @@ export interface BuildAppOptions {
   evaluationDependencies?: EvaluationDependencies
   analyticsDependencies?: AnalyticsDependencies
   catalogDependencies?: CatalogDependencies
+  conversationDependencies?: ConversationDependencies
+  orderDependencies?: OrderDependencies
+  workspaceDependencies?: WorkspaceDependencies
   logger?: boolean
 }
 
@@ -66,6 +82,11 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   const analyticsDependencies =
     options.analyticsDependencies ?? createAnalyticsDependencies(environment)
   const catalogDependencies = options.catalogDependencies ?? createCatalogDependencies(environment)
+  const conversationDependencies =
+    options.conversationDependencies ?? createConversationDependencies(environment)
+  const orderDependencies = options.orderDependencies ?? createOrderDependencies(environment)
+  const workspaceDependencies =
+    options.workspaceDependencies ?? createWorkspaceDependencies(environment)
   const app = Fastify({
     logger: options.logger ?? environment.NODE_ENV !== 'test',
     bodyLimit: environment.MAX_UPLOAD_BYTES,
@@ -99,12 +120,19 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   registerAuthRoutes(app, identityDependencies)
   registerKnowledgeRoutes(app, identityDependencies, knowledgeDependencies)
   registerPublicChatRoutes(app, environment, agentDependencies)
+  registerPlaygroundRoutes(app, environment, identityDependencies, agentDependencies)
+  registerConversationRoutes(app, identityDependencies, conversationDependencies)
+  registerOrderRoutes(app, identityDependencies, orderDependencies)
+  registerWorkspaceRoutes(app, identityDependencies, workspaceDependencies)
   registerTicketRoutes(app, identityDependencies, ticketDependencies)
   registerWebhookRoutes(app, identityDependencies, webhookDependencies)
   registerEvaluationRoutes(app, identityDependencies, evaluationDependencies)
   registerOverviewRoutes(app, identityDependencies, analyticsDependencies)
 
   app.addHook('onClose', async () => {
+    await workspaceDependencies.workspaceRepository.close()
+    await orderDependencies.orderRepository.close()
+    await conversationDependencies.conversationRepository.close()
     await catalogDependencies.catalogRepository.close()
     await analyticsDependencies.analyticsRepository.close()
     await evaluationDependencies.evaluationService.close()

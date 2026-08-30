@@ -7,10 +7,15 @@ import { WEBHOOK_EVENTS, type WebhookEvent } from '@grounddesk/shared'
 
 import { useAuthStore } from '../stores/auth'
 import { useWebhookStore } from '../stores/webhooks'
+import { useWorkspaceStore } from '../stores/workspace'
+import DemoResetPanel from '../components/DemoResetPanel.vue'
+import WorkspaceMembersPanel from '../components/WorkspaceMembersPanel.vue'
+import WorkspaceSettingsPanel from '../components/WorkspaceSettingsPanel.vue'
 
 const { locale, t } = useI18n()
 const authStore = useAuthStore()
 const webhookStore = useWebhookStore()
+const workspaceStore = useWorkspaceStore()
 const isAdmin = computed(() => authStore.activeMembership?.role === 'admin')
 const copied = ref(false)
 const form = reactive({
@@ -35,7 +40,9 @@ const copySecret = async (): Promise<void> => {
 }
 
 onMounted(() => {
-  if (isAdmin.value) void webhookStore.load()
+  if (isAdmin.value) {
+    void Promise.all([webhookStore.load(), workspaceStore.load()])
+  }
 })
 </script>
 
@@ -60,6 +67,17 @@ onMounted(() => {
       <p v-if="webhookStore.error" class="console-alert" role="alert">
         <AlertCircle :size="17" />{{ t('settings.error') }}
       </p>
+      <p v-if="workspaceStore.error" class="console-alert" role="alert">
+        <AlertCircle :size="17" />{{ workspaceStore.error }}
+      </p>
+      <p v-if="workspaceStore.isLoading" class="console-panel console-empty">
+        <LoaderCircle class="spin" :size="17" />{{ t('settings.loadingWorkspace') }}
+      </p>
+      <section v-else class="workspace-admin-grid">
+        <WorkspaceSettingsPanel />
+        <WorkspaceMembersPanel />
+        <DemoResetPanel />
+      </section>
       <section v-if="webhookStore.revealedSecret" class="secret-notice" role="status">
         <div>
           <p class="console-kicker">ONE-TIME SIGNING SECRET</p>

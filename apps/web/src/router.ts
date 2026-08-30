@@ -17,6 +17,17 @@ export const router = createRouter({
       component: () => import('./views/LoginView.vue'),
     },
     {
+      path: '/signup',
+      name: 'signup',
+      component: () => import('./views/SignupView.vue'),
+    },
+    {
+      path: '/onboarding',
+      name: 'onboarding',
+      component: () => import('./views/OnboardingView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/demo',
       name: 'demo',
       component: () => import('./views/DemoView.vue'),
@@ -37,9 +48,19 @@ export const router = createRouter({
           component: () => import('./views/KnowledgeView.vue'),
         },
         {
+          path: 'conversations',
+          name: 'console-conversations',
+          component: () => import('./views/ConversationsView.vue'),
+        },
+        {
           path: 'playground',
           name: 'console-playground',
           component: () => import('./views/PlaygroundView.vue'),
+        },
+        {
+          path: 'orders',
+          name: 'console-orders',
+          component: () => import('./views/OrdersView.vue'),
         },
         {
           path: 'tickets',
@@ -69,7 +90,15 @@ router.beforeEach(async (to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  if (to.name === 'login' && authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && !authStore.activeMembership && to.name !== 'onboarding') {
+    return { name: 'onboarding' }
+  }
+
+  if (to.name === 'onboarding' && authStore.activeMembership) {
+    return { name: 'console' }
+  }
+
+  if ((to.name === 'login' || to.name === 'signup') && authStore.isAuthenticated) {
     return { name: 'console' }
   }
 

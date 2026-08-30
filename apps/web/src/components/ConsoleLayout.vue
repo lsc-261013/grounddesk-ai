@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import {
   BookOpenText,
+  Bot,
   Gauge,
   FlaskConical,
   LogOut,
   Menu,
   MessageSquareText,
+  ShoppingBag,
   Settings,
   TicketCheck,
 } from 'lucide-vue-next'
@@ -59,10 +61,19 @@ const signOut = async (): Promise<void> => {
           <BookOpenText :size="17" />{{ t('console.knowledge') }}
         </RouterLink>
         <RouterLink
+          to="/console/conversations"
+          :class="{ active: route.name === 'console-conversations' }"
+        >
+          <MessageSquareText :size="17" />{{ t('console.conversations') }}
+        </RouterLink>
+        <RouterLink
           to="/console/playground"
           :class="{ active: route.name === 'console-playground' }"
         >
-          <MessageSquareText :size="17" />{{ t('console.conversations') }}
+          <Bot :size="17" />{{ t('console.playground') }}
+        </RouterLink>
+        <RouterLink to="/console/orders" :class="{ active: route.name === 'console-orders' }">
+          <ShoppingBag :size="17" />{{ t('console.orders') }}
         </RouterLink>
         <RouterLink to="/console/tickets" :class="{ active: route.name === 'console-tickets' }">
           <TicketCheck :size="17" />{{ t('console.tickets') }}

@@ -1,4 +1,9 @@
-import { authSessionResponseSchema, type AuthSessionResponse } from '@grounddesk/shared'
+import {
+  authSessionResponseSchema,
+  workspaceOnboardingResponseSchema,
+  type AuthSessionResponse,
+  type Locale,
+} from '@grounddesk/shared'
 import type { Session } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -90,6 +95,56 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const signUp = async (
+    email: string,
+    password: string,
+    displayName: string,
+    locale: Locale,
+  ): Promise<'signed_in' | 'confirmation_required' | 'failed'> => {
+    isSubmitting.value = true
+    error.value = null
+    try {
+      const { data, error: signUpError } = await getSupabaseClient().auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: displayName, locale } },
+      })
+      if (signUpError) throw signUpError
+      if (!data.session) return 'confirmation_required'
+      await applyProviderSession(data.session)
+      return 'signed_in'
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'Sign up failed.'
+      return 'failed'
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
+  const onboard = async (name: string, slug: string, defaultLocale: Locale): Promise<boolean> => {
+    const token = accessToken.value
+    if (!token) return false
+    isSubmitting.value = true
+    error.value = null
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/auth/onboard`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, slug, defaultLocale }),
+      })
+      if (!response.ok)
+        throw new Error(`Workspace onboarding failed with status ${response.status}`)
+      workspaceOnboardingResponseSchema.parse(await response.json())
+      await loadApiSession(token)
+      return true
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'Workspace onboarding failed.'
+      return false
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
   const signOut = async (): Promise<void> => {
     isSubmitting.value = true
     error.value = null
@@ -114,8 +169,10 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isInitializing,
     isSubmitting,
+    onboard,
     session,
     signIn,
     signOut,
+    signUp,
   }
 })

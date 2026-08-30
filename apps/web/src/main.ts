@@ -9,5 +9,6 @@ import './styles/console.css'
 import './styles/demo.css'
 import './styles/landing.css'
 import './styles/main.css'
+import './styles/operations.css'
 
 createApp(App).use(createPinia()).use(router).use(i18n).mount('#app')

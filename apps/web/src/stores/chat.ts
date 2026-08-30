@@ -11,6 +11,8 @@ import {
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+import { useAuthStore } from './auth'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787'
 const SESSION_STORAGE_KEY = 'grounddesk-public-chat-session'
 
@@ -80,6 +82,7 @@ export const useChatStore = defineStore('chat', () => {
   const messages = ref<ChatMessageView[]>([])
   const isStreaming = ref(false)
   const error = ref<string | null>(null)
+  const activeChannel = ref('public')
 
   const hasMessages = computed(() => messages.value.length > 0)
 
@@ -128,7 +131,21 @@ export const useChatStore = defineStore('chat', () => {
     error.value = streamEvent.message
   }
 
-  const sendMessage = async (rawMessage: string, locale: Locale): Promise<void> => {
+  const ensureChannel = (channel: string): void => {
+    if (activeChannel.value === channel) return
+    activeChannel.value = channel
+    conversationId.value = null
+    messages.value = []
+    error.value = null
+  }
+
+  const send = async (
+    rawMessage: string,
+    locale: Locale,
+    channel: string,
+    accessToken?: string,
+  ): Promise<void> => {
+    ensureChannel(channel)
     const content = rawMessage.trim()
     if (!content || isStreaming.value) return
     error.value = null
@@ -160,9 +177,17 @@ export const useChatStore = defineStore('chat', () => {
     messages.value.push(assistant)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/public/workspaces/avenlo-demo/chat/stream`, {
+      const isWorkspace = channel.startsWith('workspace:')
+      const workspaceId = isWorkspace ? channel.slice('workspace:'.length) : null
+      const path = workspaceId
+        ? `/v1/workspaces/${workspaceId}/playground/stream`
+        : '/v1/public/workspaces/avenlo-demo/chat/stream'
+      const response = await fetch(`${API_BASE_URL}${path}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           sessionId: sessionId.value,
           ...(conversationId.value ? { conversationId: conversationId.value } : {}),
@@ -201,13 +226,28 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const resetConversation = (): void => {
+  const sendMessage = (rawMessage: string, locale: Locale): Promise<void> =>
+    send(rawMessage, locale, 'public')
+
+  const sendWorkspaceMessage = (
+    rawMessage: string,
+    locale: Locale,
+    workspaceId: string,
+    accessToken: string,
+  ): Promise<void> => send(rawMessage, locale, `workspace:${workspaceId}`, accessToken)
+
+  const resetChannel = (channel: string): void => {
+    activeChannel.value = channel
     sessionId.value = crypto.randomUUID()
     window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId.value)
     conversationId.value = null
     messages.value = []
     error.value = null
   }
+
+  const resetConversation = (): void => resetChannel('public')
+  const resetWorkspaceConversation = (workspaceId: string): void =>
+    resetChannel(`workspace:${workspaceId}`)
 
   const submitFeedback = async (
     message: ChatMessageView,
@@ -216,19 +256,26 @@ export const useChatStore = defineStore('chat', () => {
     if (!conversationId.value || message.role !== 'assistant' || message.streaming) return
     error.value = null
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/v1/public/workspaces/avenlo-demo/chat/feedback`,
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: sessionId.value,
-            conversationId: conversationId.value,
-            messageId: message.id,
-            rating,
-          }),
+      const workspaceId = activeChannel.value.startsWith('workspace:')
+        ? activeChannel.value.slice('workspace:'.length)
+        : null
+      const accessToken = workspaceId ? useAuthStore().accessToken : null
+      const path = workspaceId
+        ? `/v1/workspaces/${workspaceId}/playground/feedback`
+        : '/v1/public/workspaces/avenlo-demo/chat/feedback'
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
         },
-      )
+        body: JSON.stringify({
+          sessionId: sessionId.value,
+          conversationId: conversationId.value,
+          messageId: message.id,
+          rating,
+        }),
+      })
       if (!response.ok) throw new Error(await readErrorMessage(response))
       publicChatFeedbackResponseSchema.parse(await response.json())
       message.feedback = rating
@@ -244,7 +291,9 @@ export const useChatStore = defineStore('chat', () => {
     isStreaming,
     messages,
     resetConversation,
+    resetWorkspaceConversation,
     sendMessage,
+    sendWorkspaceMessage,
     submitFeedback,
   }
 })

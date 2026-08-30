@@ -18,9 +18,21 @@ class UnavailableAgentService implements AgentService {
     )
   }
 
+  openWorkspaceChat(): ReturnType<AgentService['openWorkspaceChat']> {
+    return Promise.reject(
+      new ServiceUnavailableError('Workspace AI chat is unavailable in offline mode.'),
+    )
+  }
+
   submitFeedback(): Promise<boolean> {
     return Promise.reject(
       new ServiceUnavailableError('Public chat feedback is unavailable in offline mode.'),
+    )
+  }
+
+  submitWorkspaceFeedback(): Promise<boolean> {
+    return Promise.reject(
+      new ServiceUnavailableError('Workspace chat feedback is unavailable in offline mode.'),
     )
   }
 

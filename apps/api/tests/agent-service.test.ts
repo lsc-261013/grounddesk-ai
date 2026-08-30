@@ -33,6 +33,10 @@ class MemoryAgentRepository implements AgentRepository {
     })
   }
 
+  getWorkspace(): ReturnType<AgentRepository['getWorkspace']> {
+    return this.getPublicWorkspace()
+  }
+
   reserveDemoRequest(): Promise<boolean> {
     return Promise.resolve(true)
   }

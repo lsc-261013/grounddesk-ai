@@ -108,6 +108,12 @@
   color: #596273;
 }
 
+.field small {
+  color: #707b8c;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .primary-button,
 .secondary-button {
   display: inline-flex;
@@ -152,6 +158,26 @@
 
 .form-message--warning {
   color: #cbd1db;
+}
+
+.form-message--success {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: #99edc8;
+  background: rgb(57 230 163 / 7%);
+  border-left-color: #39e6a3;
+}
+
+.auth-switch {
+  color: #9ea8b7;
+  font-size: 12px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.auth-switch:hover {
+  color: #d9dfe7;
 }
 
 .console-page {

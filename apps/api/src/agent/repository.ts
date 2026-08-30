@@ -88,6 +88,7 @@ export interface UsageEventInput {
 
 export interface AgentRepository {
   getPublicWorkspace(slug: string): Promise<PublicWorkspaceConfig | null>
+  getWorkspace(workspaceId: string): Promise<PublicWorkspaceConfig | null>
   reserveDemoRequest(
     workspaceId: string,
     requestLimit: number,

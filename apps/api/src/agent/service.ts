@@ -53,7 +53,9 @@ export interface AgentService {
     input: PublicChatRequest,
     options?: { quotaExempt?: boolean; source?: ConversationSource },
   ): Promise<OpenChatResult>
+  openWorkspaceChat(workspaceId: string, input: PublicChatRequest): Promise<OpenChatResult>
   submitFeedback(workspaceSlug: string, input: PublicChatFeedbackInput): Promise<boolean>
+  submitWorkspaceFeedback(workspaceId: string, input: PublicChatFeedbackInput): Promise<boolean>
   close(): Promise<void>
 }
 
@@ -162,6 +164,20 @@ export class DefaultAgentService implements AgentService {
       }
     }
 
+    return this.openChat(workspace, input, options)
+  }
+
+  async openWorkspaceChat(workspaceId: string, input: PublicChatRequest): Promise<OpenChatResult> {
+    const workspace = await this.repository.getWorkspace(workspaceId)
+    if (!workspace) throw new PublicChatError('The Workspace does not exist.', 404, 'not_found')
+    return this.openChat(workspace, input, { quotaExempt: true, source: 'playground' })
+  }
+
+  private async openChat(
+    workspace: PublicWorkspaceConfig,
+    input: PublicChatRequest,
+    options: { quotaExempt?: boolean; source?: ConversationSource },
+  ): Promise<OpenChatResult> {
     const source = options.source ?? 'public_demo'
     const conversation = await this.repository.getOrCreateConversation({
       workspaceId: workspace.id,
@@ -197,8 +213,24 @@ export class DefaultAgentService implements AgentService {
   async submitFeedback(workspaceSlug: string, input: PublicChatFeedbackInput): Promise<boolean> {
     const workspace = await this.repository.getPublicWorkspace(workspaceSlug)
     if (!workspace) return false
+    return this.submitFeedbackForWorkspace(workspace.id, input)
+  }
+
+  async submitWorkspaceFeedback(
+    workspaceId: string,
+    input: PublicChatFeedbackInput,
+  ): Promise<boolean> {
+    const workspace = await this.repository.getWorkspace(workspaceId)
+    if (!workspace) return false
+    return this.submitFeedbackForWorkspace(workspace.id, input)
+  }
+
+  private submitFeedbackForWorkspace(
+    workspaceId: string,
+    input: PublicChatFeedbackInput,
+  ): Promise<boolean> {
     return this.repository.saveFeedback({
-      workspaceId: workspace.id,
+      workspaceId,
       sessionHash: hashSession(input.sessionId),
       conversationId: input.conversationId,
       messageId: input.messageId,

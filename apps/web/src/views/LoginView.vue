@@ -77,6 +77,7 @@ const submit = async (): Promise<void> => {
         <span>{{ authStore.isSubmitting ? t('auth.signingIn') : t('auth.signIn') }}</span>
         <ArrowRight :size="17" aria-hidden="true" />
       </button>
+      <RouterLink class="auth-switch" to="/signup">{{ t('auth.needAccount') }}</RouterLink>
     </form>
   </main>
 </template>
