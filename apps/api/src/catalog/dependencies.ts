@@ -10,6 +10,18 @@ class UnavailableCatalogRepository implements CatalogRepository {
     return Promise.reject(new ServiceUnavailableError('Catalog is unavailable in offline mode.'))
   }
 
+  listProducts(): Promise<never> {
+    return Promise.reject(new ServiceUnavailableError('Catalog is unavailable in offline mode.'))
+  }
+
+  createProduct(): Promise<never> {
+    return Promise.reject(new ServiceUnavailableError('Catalog is unavailable in offline mode.'))
+  }
+
+  updateProduct(): Promise<never> {
+    return Promise.reject(new ServiceUnavailableError('Catalog is unavailable in offline mode.'))
+  }
+
   close(): Promise<void> {
     return Promise.resolve()
   }

@@ -195,7 +195,8 @@ on conflict (id) do update set
   price_cents = excluded.price_cents,
   specs = excluded.specs,
   is_returnable = excluded.is_returnable,
-  opened_return_policy = excluded.opened_return_policy;
+  opened_return_policy = excluded.opened_return_policy,
+  is_active = true;
 
 insert into public.return_policies (
   id,

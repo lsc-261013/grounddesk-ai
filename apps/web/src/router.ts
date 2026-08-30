@@ -63,6 +63,11 @@ export const router = createRouter({
           component: () => import('./views/OrdersView.vue'),
         },
         {
+          path: 'products',
+          name: 'console-products',
+          component: () => import('./views/ProductsView.vue'),
+        },
+        {
           path: 'tickets',
           name: 'console-tickets',
           component: () => import('./views/TicketsView.vue'),

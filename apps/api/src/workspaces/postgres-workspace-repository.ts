@@ -1,4 +1,4 @@
-import type { Sql } from 'postgres'
+import type { JSONValue, Sql } from 'postgres'
 
 import {
   workspaceMemberSchema,
@@ -16,7 +16,11 @@ import {
   createRepositoryDatabase,
   type DatabaseSource,
 } from '../db/client.js'
+import { DEMO_PRODUCT_BASELINE } from './demo-products.js'
 import type { WorkspaceRepository } from './repository.js'
+
+const asJsonValue = (value: Record<string, unknown>): JSONValue =>
+  JSON.parse(JSON.stringify(value)) as JSONValue
 
 interface SettingsRow {
   id: string
@@ -204,6 +208,38 @@ export class PostgresWorkspaceRepository implements WorkspaceRepository {
       await transaction`delete from public.ai_usage_events where workspace_id = ${workspaceId}`
       await transaction`delete from public.audit_logs where workspace_id = ${workspaceId}`
       await transaction`delete from public.conversations where workspace_id = ${workspaceId}`
+      for (const product of DEMO_PRODUCT_BASELINE) {
+        await transaction`
+          insert into public.products (
+            id, workspace_id, sku, model, category, name_zh, name_en, description_zh,
+            description_en, price_cents, currency, specs, is_returnable,
+            opened_return_policy, is_active
+          ) values (
+            ${product.id}, ${workspaceId}, ${product.sku}, ${product.model}, ${product.category},
+            ${product.nameZh}, ${product.nameEn}, ${product.descriptionZh},
+            ${product.descriptionEn}, ${product.priceCents}, ${product.currency},
+            ${transaction.json(asJsonValue(product.specs))}, ${product.isReturnable},
+            ${product.openedReturnPolicy}, true
+          )
+          on conflict (id) do update set sku = excluded.sku, model = excluded.model,
+            category = excluded.category, name_zh = excluded.name_zh, name_en = excluded.name_en,
+            description_zh = excluded.description_zh,
+            description_en = excluded.description_en, price_cents = excluded.price_cents,
+            currency = excluded.currency, specs = excluded.specs,
+            is_returnable = excluded.is_returnable,
+            opened_return_policy = excluded.opened_return_policy, is_active = true,
+            updated_at = now()
+        `
+      }
+      const baselineIds = DEMO_PRODUCT_BASELINE.map((product) => product.id)
+      await transaction`
+        delete from public.products product
+        where product.workspace_id = ${workspaceId}
+          and product.id not in ${transaction(baselineIds)}
+          and not exists (
+            select 1 from public.order_items item where item.product_id = product.id
+          )
+      `
       await transaction`
         with generated as (
           select series as order_index,

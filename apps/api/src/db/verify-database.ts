@@ -19,6 +19,7 @@ interface DatabaseInfrastructure {
   rlsEnabledCount: number
   migrationCount: number
   knowledgeBucketExists: boolean
+  productLifecycleColumnExists: boolean
 }
 
 interface DemoCases {
@@ -127,7 +128,8 @@ if (!env.SUPABASE_DB_URL) {
             '202608300004_chat_evidence_signals',
             '202608300005_ticket_webhook_outbox',
             '202608300006_conversation_sources',
-            '202608300007_message_feedback'
+            '202608300007_message_feedback',
+            '202608310008_product_lifecycle'
           )
         ) as "migrationCount",
         exists (
@@ -136,7 +138,12 @@ if (!env.SUPABASE_DB_URL) {
           where id = 'grounddesk-knowledge'
             and not public
             and file_size_limit = 10485760
-        ) as "knowledgeBucketExists"
+        ) as "knowledgeBucketExists",
+        exists (
+          select 1
+          from information_schema.columns
+          where table_schema = 'public' and table_name = 'products' and column_name = 'is_active'
+        ) as "productLifecycleColumnExists"
     `
 
     const demoCases = await database<DemoCases[]>`
@@ -185,8 +192,9 @@ if (!env.SUPABASE_DB_URL) {
       rlsCoverage:
         infrastructureResult.rlsTableCount === 26 &&
         infrastructureResult.rlsEnabledCount === infrastructureResult.rlsTableCount,
-      migrationsRecorded: infrastructureResult.migrationCount === 7,
+      migrationsRecorded: infrastructureResult.migrationCount === 8,
       privateKnowledgeBucket: infrastructureResult.knowledgeBucketExists,
+      productLifecycle: infrastructureResult.productLifecycleColumnExists,
       demoLookup: demoResult.lookupOrderExists,
       returnWindowCases:
         demoResult.withinReturnWindowExists && demoResult.outsideReturnWindowExists,

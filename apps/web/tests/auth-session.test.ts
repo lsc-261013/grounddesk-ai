@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const authMock = vi.hoisted(() => ({
   listener: null as ((event: string, session: Session | null) => void) | null,
   session: null as Session | null,
+  signOutError: null as Error | null,
 }))
 
 vi.mock('../src/lib/supabase', () => ({
@@ -18,6 +19,7 @@ vi.mock('../src/lib/supabase', () => ({
           authMock.listener = listener
           return { data: { subscription: { unsubscribe: vi.fn() } } }
         },
+        signOut: () => Promise.resolve({ error: authMock.signOutError }),
       },
     }) as unknown as SupabaseClient,
 }))
@@ -56,6 +58,7 @@ describe('authentication session synchronization', () => {
     setActivePinia(createPinia())
     authMock.session = providerSession
     authMock.listener = null
+    authMock.signOutError = null
     vi.stubGlobal(
       'fetch',
       vi.fn(() =>
@@ -80,5 +83,18 @@ describe('authentication session synchronization', () => {
 
     expect(store.activeMembership?.workspace.slug).toBe('avenlo-demo')
     expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears the browser session even when the provider cannot complete sign-out', async () => {
+    const { useAuthStore } = await import('../src/stores/auth')
+    const store = useAuthStore()
+    await store.initialize()
+    authMock.signOutError = new Error('Provider sign-out unavailable')
+
+    await store.signOut()
+
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.session).toBeNull()
+    expect(store.error).toBe('Provider sign-out unavailable')
   })
 })

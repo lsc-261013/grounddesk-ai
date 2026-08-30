@@ -50,6 +50,15 @@ test('administrator can refresh protected pages and inspect operations data', as
   await expect(page.getByLabel('工作区名称', { exact: true })).toHaveValue('Avenlo Demo Workspace')
   await expect(page.getByText('admin@demo.grounddesk.app', { exact: true })).toBeVisible()
   await expect(page.getByText('agent@demo.grounddesk.app', { exact: true })).toBeVisible()
+
+  await page.goto('/console/products')
+  await expect(page.getByRole('heading', { name: '商品目录', exact: true })).toBeVisible()
+  await expect(page.getByText('Airwave S1', { exact: false }).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: '新增商品', exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(page.getByRole('button', { name: '安全登录', exact: true })).toBeVisible()
 })
 
 test('agent navigation and direct-route states respect role boundaries', async ({ page }) => {
@@ -61,6 +70,9 @@ test('agent navigation and direct-route states respect role boundaries', async (
   await expect(navigation.getByRole('link', { name: '设置', exact: true })).toHaveCount(0)
 
   await page.goto('/console/settings')
+  await expect(page.getByRole('heading', { name: '需要管理员权限', exact: true })).toBeVisible()
+
+  await page.goto('/console/products')
   await expect(page.getByRole('heading', { name: '需要管理员权限', exact: true })).toBeVisible()
 
   await page.goto('/console/tickets')

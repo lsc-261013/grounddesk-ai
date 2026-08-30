@@ -5,6 +5,8 @@ export const PERMISSIONS = [
   'workspace:manage',
   'knowledge:read',
   'knowledge:write',
+  'products:read',
+  'products:write',
   'orders:read',
   'orders:write',
   'conversations:read',

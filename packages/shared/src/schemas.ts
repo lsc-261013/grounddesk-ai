@@ -225,6 +225,47 @@ export const publicProductListResponseSchema = z.object({
   products: z.array(publicProductSchema),
 })
 
+export const consoleProductSchema = publicProductSchema.extend({
+  isReturnable: z.boolean(),
+  openedReturnPolicy: z.string().trim().min(2).max(80),
+  isActive: z.boolean(),
+  updatedAt: z.iso.datetime(),
+})
+
+export const productMutationInputSchema = z.object({
+  sku: z
+    .string()
+    .trim()
+    .min(3)
+    .max(80)
+    .regex(/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/),
+  model: z.string().trim().min(2).max(80),
+  category: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/),
+  nameZh: z.string().trim().min(2).max(160),
+  nameEn: z.string().trim().min(2).max(160),
+  descriptionZh: z.string().trim().min(10).max(1_000),
+  descriptionEn: z.string().trim().min(10).max(1_000),
+  priceCents: z.number().int().min(0).max(100_000_000),
+  currency: z
+    .string()
+    .trim()
+    .regex(/^[A-Z]{3}$/),
+  specs: z.record(z.string().min(1).max(80), z.unknown()),
+  isReturnable: z.boolean(),
+  openedReturnPolicy: z.string().trim().min(2).max(80),
+  isActive: z.boolean(),
+})
+
+export const consoleProductListResponseSchema = z.object({
+  products: z.array(consoleProductSchema),
+})
+export const consoleProductResponseSchema = z.object({ product: consoleProductSchema })
+
 export const consoleOrderItemSchema = z.object({
   id: z.uuid(),
   productId: z.uuid(),
@@ -670,6 +711,8 @@ export type ReturnEligibilityToolInput = z.infer<typeof returnEligibilityToolInp
 export type PublicOrderItem = z.infer<typeof publicOrderItemSchema>
 export type PublicOrder = z.infer<typeof publicOrderSchema>
 export type PublicProduct = z.infer<typeof publicProductSchema>
+export type ConsoleProduct = z.infer<typeof consoleProductSchema>
+export type ProductMutationInput = z.infer<typeof productMutationInputSchema>
 export type OrderLookupToolResult = z.infer<typeof orderLookupToolResultSchema>
 export type ReturnEligibilityResult = z.infer<typeof returnEligibilityResultSchema>
 export type ChatCitation = z.infer<typeof chatCitationSchema>

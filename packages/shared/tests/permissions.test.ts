@@ -10,6 +10,7 @@ describe('workspace permissions', () => {
   it('prevents a support agent from changing critical settings', () => {
     expect(hasPermission('agent', 'settings:manage')).toBe(false)
     expect(hasPermission('agent', 'knowledge:write')).toBe(false)
+    expect(hasPermission('agent', 'products:write')).toBe(false)
   })
 
   it('allows a support agent to read and reply to tickets', () => {

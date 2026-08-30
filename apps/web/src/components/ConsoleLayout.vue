@@ -2,6 +2,7 @@
 import {
   BookOpenText,
   Bot,
+  Boxes,
   Gauge,
   FlaskConical,
   LogOut,
@@ -71,6 +72,13 @@ const signOut = async (): Promise<void> => {
           :class="{ active: route.name === 'console-playground' }"
         >
           <Bot :size="17" />{{ t('console.playground') }}
+        </RouterLink>
+        <RouterLink
+          v-if="isAdmin"
+          to="/console/products"
+          :class="{ active: route.name === 'console-products' }"
+        >
+          <Boxes :size="17" />{{ t('console.products') }}
         </RouterLink>
         <RouterLink to="/console/orders" :class="{ active: route.name === 'console-orders' }">
           <ShoppingBag :size="17" />{{ t('console.orders') }}

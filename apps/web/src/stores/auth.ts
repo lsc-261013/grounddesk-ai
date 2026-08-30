@@ -153,13 +153,13 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const { error: signOutError } = await getSupabaseClient().auth.signOut()
+      const { error: signOutError } = await getSupabaseClient().auth.signOut({ scope: 'local' })
       if (signOutError) throw signOutError
-      providerSession.value = null
-      session.value = null
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Sign out failed.'
     } finally {
+      providerSession.value = null
+      session.value = null
       isSubmitting.value = false
     }
   }

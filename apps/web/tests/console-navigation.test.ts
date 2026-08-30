@@ -59,13 +59,15 @@ describe('console navigation permissions', () => {
     const wrapper = await renderNavigation('agent')
 
     expect(wrapper.text()).toContain('订单')
+    expect(wrapper.text()).not.toContain('商品')
     expect(wrapper.text()).not.toContain('评测')
     expect(wrapper.text()).not.toContain('设置')
   })
 
-  it('shows evaluation and settings destinations to administrators', async () => {
+  it('shows product, evaluation, and settings destinations to administrators', async () => {
     const wrapper = await renderNavigation('admin')
 
+    expect(wrapper.text()).toContain('商品')
     expect(wrapper.text()).toContain('评测')
     expect(wrapper.text()).toContain('设置')
   })

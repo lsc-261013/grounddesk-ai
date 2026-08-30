@@ -102,7 +102,26 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   const workspaceDependencies =
     options.workspaceDependencies ?? createWorkspaceDependencies(environment, database ?? undefined)
   const app = Fastify({
-    logger: options.logger ?? environment.NODE_ENV !== 'test',
+    logger:
+      options.logger === false || (options.logger === undefined && environment.NODE_ENV === 'test')
+        ? false
+        : {
+            level: environment.LOG_LEVEL,
+            redact: {
+              paths: [
+                'req.headers.authorization',
+                'req.headers.cookie',
+                'request.headers.authorization',
+                'request.headers.cookie',
+                '*.password',
+                '*.accessToken',
+                '*.refreshToken',
+                '*.signingSecret',
+                '*.encryptedSigningSecret',
+              ],
+              censor: '[Redacted]',
+            },
+          },
     bodyLimit: environment.MAX_UPLOAD_BYTES,
     trustProxy: true,
   })
@@ -130,7 +149,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorateRequest('workspaceAccess', null)
 
   registerHealthRoute(app, environment)
-  registerCatalogRoutes(app, catalogDependencies)
+  registerCatalogRoutes(app, identityDependencies, catalogDependencies)
   registerAuthRoutes(app, identityDependencies)
   registerKnowledgeRoutes(app, identityDependencies, knowledgeDependencies)
   registerPublicChatRoutes(app, environment, agentDependencies)
