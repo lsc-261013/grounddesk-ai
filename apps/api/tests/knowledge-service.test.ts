@@ -245,4 +245,118 @@ describe('knowledge ingestion service', () => {
     expect(repository.documents.size).toBe(1)
     expect(storage.files.size).toBe(1)
   })
+
+  it('rejects empty and oversized files before writing to storage', async () => {
+    const repository = new MemoryRepository()
+    const storage = new MemoryStorage()
+    const service = new DefaultKnowledgeService(
+      repository,
+      storage,
+      new DeterministicEmbeddingProvider(),
+      {
+        maxUploadBytes: 8,
+        maxWorkspaceDocuments: 20,
+        chunkTargetChars: 400,
+        chunkOverlapChars: 80,
+      },
+    )
+    const baseInput = {
+      workspaceId: WORKSPACE_ID,
+      createdBy: USER_ID,
+      language: 'en-US' as const,
+    }
+
+    await expect(
+      service.registerDocument({
+        ...baseInput,
+        file: { filename: 'empty.txt', mimeType: 'text/plain', bytes: Buffer.alloc(0) },
+      }),
+    ).rejects.toThrow('empty')
+    await expect(
+      service.registerDocument({
+        ...baseInput,
+        file: { filename: 'large.txt', mimeType: 'text/plain', bytes: Buffer.alloc(9, 'a') },
+      }),
+    ).rejects.toThrow('10 MB')
+    expect(storage.files.size).toBe(0)
+    expect(repository.documents.size).toBe(0)
+  })
+
+  it('enforces the workspace document limit without blocking byte-identical deduplication', async () => {
+    const repository = new MemoryRepository()
+    const storage = new MemoryStorage()
+    const service = new DefaultKnowledgeService(
+      repository,
+      storage,
+      new DeterministicEmbeddingProvider(),
+      {
+        maxUploadBytes: 10 * 1024 * 1024,
+        maxWorkspaceDocuments: 1,
+        chunkTargetChars: 400,
+        chunkOverlapChars: 80,
+      },
+    )
+    const firstInput = {
+      workspaceId: WORKSPACE_ID,
+      createdBy: USER_ID,
+      language: 'en-US' as const,
+      file: {
+        filename: 'first.txt',
+        mimeType: 'text/plain',
+        bytes: Buffer.from('The first unique policy document.'),
+      },
+    }
+
+    const first = await service.registerDocument(firstInput)
+    await service.waitForIdle()
+    const duplicate = await service.registerDocument(firstInput)
+    expect(duplicate.duplicate).toBe(true)
+    expect(duplicate.document.id).toBe(first.document.id)
+
+    await expect(
+      service.registerDocument({
+        ...firstInput,
+        file: {
+          filename: 'second.txt',
+          mimeType: 'text/plain',
+          bytes: Buffer.from('A different policy document.'),
+        },
+      }),
+    ).rejects.toThrow('20-document limit')
+    expect(repository.documents.size).toBe(1)
+    expect(storage.files.size).toBe(1)
+  })
+
+  it('reprocesses failed documents while rejecting retries for ready documents', async () => {
+    const { repository, service } = createService()
+    const result = await service.registerDocument({
+      workspaceId: WORKSPACE_ID,
+      createdBy: USER_ID,
+      language: 'en-US',
+      file: {
+        filename: 'retry.txt',
+        mimeType: 'text/plain',
+        bytes: Buffer.from('A retryable warranty policy document.'),
+      },
+    })
+    await service.waitForIdle()
+
+    await expect(service.retryDocument(WORKSPACE_ID, result.document.id)).rejects.toThrow(
+      'Only failed documents',
+    )
+
+    const readyDocument = repository.documents.get(result.document.id)
+    expect(readyDocument).toBeDefined()
+    if (!readyDocument) throw new Error('The document was not persisted.')
+    repository.documents.set(result.document.id, {
+      ...readyDocument,
+      status: 'failed',
+      failureCode: 'embedding_failed',
+      failureMessage: 'Temporary provider failure.',
+    })
+
+    await service.retryDocument(WORKSPACE_ID, result.document.id)
+    await service.waitForIdle()
+    expect((await repository.getDocument(WORKSPACE_ID, result.document.id))?.status).toBe('ready')
+  })
 })
