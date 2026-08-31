@@ -1,6 +1,6 @@
 # GroundDesk 求职文案
 
-以下文案只描述仓库中已经实现并验证的能力。在线 URL、GitHub URL、Lighthouse 分数和后续评测结果必须在真实部署后填写，不能预估。
+以下文案只描述仓库中已经实现并验证的能力。在线 URL、GitHub URL 和评测结果来自真实部署；Lighthouse 只引用明确标注的本地 production 成绩，不预估线上分数。
 
 ## 简历项目描述
 
@@ -29,8 +29,8 @@
 
 项目同时实现 Supabase Auth/RLS、多租户权限、SSE 流式轨迹、Webhook Outbox、真实评测与 Playwright 验收。我可以在三分钟内现场演示从 RAG 引用、Tool Calling 到人工接管的完整链路，并解释其中的失败案例与工程取舍。
 
-在线 Demo：部署后填写  
-GitHub：部署后填写
+- 在线 Demo：https://grounddesk-ai-lsc.onrender.com
+- GitHub：https://github.com/lsc-261013/grounddesk-ai
 
 感谢阅读，期待进一步交流。
 

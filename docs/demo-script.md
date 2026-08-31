@@ -1,5 +1,7 @@
 # GroundDesk 三分钟中文演示脚本
 
+公开 Demo：https://grounddesk-ai-lsc.onrender.com
+
 ## 演示前准备
 
 - 使用无痕窗口打开公开落地页；

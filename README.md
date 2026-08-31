@@ -2,13 +2,13 @@
 
 > 每一次回答，都有依据。Support answers you can verify.
 
-GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客服知识库 SaaS。它把“模型会回答”约束为“答案有来源、无依据会拒答、业务动作有确定边界”。本地验收截图已经由真实数据库状态录制，公开 Demo 仍待部署验收；仓库不会使用占位 URL、伪造指标或虚构客户评价。
+GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客服知识库 SaaS。它把“模型会回答”约束为“答案有来源、无依据会拒答、业务动作有确定边界”。公开 Demo 已连接真实 Supabase、DeepSeek 与 SiliconFlow 链路；仓库不会使用占位 URL、伪造指标或虚构客户评价。
 
 ## 在线 Demo
 
-- 公开地址：Render 部署完成并通过线上验收后填写；
+- 公开地址：[https://grounddesk-ai-lsc.onrender.com](https://grounddesk-ai-lsc.onrender.com)；
 - Demo Workspace：虚构消费电子品牌 Avenlo，所有商品、订单与顾客均为模拟数据；
-- 访客无需 API Key；公开部署后可直接体验知识引用、订单查询和人工接管；
+- 访客无需 API Key，可直接体验知识引用、订单查询和人工接管；
 - GitHub：[lsc-261013/grounddesk-ai](https://github.com/lsc-261013/grounddesk-ai)。
 
 ## 核心价值
@@ -32,6 +32,8 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 里程碑 5 已完成：站内工单支持分配、回复与状态流转；Webhook 使用事务型 Outbox、HMAC、超时、重试和 SSRF 防护；26 条双语确定性评测覆盖知识、订单、退货、无答案、提示注入与跨 Workspace 隔离，最新真实运行 26/26 通过。
 
 里程碑 6 的核心浏览器验收已完成：Playwright 覆盖双语持久化、reduced motion、390px 响应式、管理员保护页刷新、客服角色边界，以及真实订单 Tool Call 和无答案人工接管链路。
+
+里程碑 7 的公开部署验收已完成：Render Static Site 与 Free API 均为 Live，`/health` 返回 connected 且三个 Provider 均已配置；同一套 Playwright 用例已直接对公网 Origin 验证登录、权限、引用、工具、拒答、工单闭环和四档响应式。Free API 仍会休眠，投递简历前需要升级为常驻实例。
 
 管理员商品目录现已连接真实数据库，支持双语主数据、结构化规格、价格、退货属性与公开状态的创建和编辑；商品采用归档而非删除以保留历史订单引用，客服无法修改。Demo Reset 会恢复 8 件基准商品。
 
@@ -129,12 +131,12 @@ pnpm test:e2e
 部署后可将 `E2E_BASE_URL` 设置为公开 Web Origin；Playwright 会跳过本地开发服务器，直接对线上站点执行同一套登录、权限、RAG、工具与接管验收。PowerShell 示例：
 
 ```powershell
-$env:E2E_BASE_URL = 'https://your-public-web-origin.example'
+$env:E2E_BASE_URL = 'https://grounddesk-ai-lsc.onrender.com'
 $env:E2E_LIVE_AI = 'true'
 pnpm test:e2e
 ```
 
-2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 99 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 97 / 100 / 100 / 100。公开部署后必须从无痕环境重跑，不能把本地网络结果直接当作线上成绩。
+2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 99 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 97 / 100 / 100 / 100。线上 Playwright 与响应头已实测，但本次公网 Lighthouse 工具下载超时、PageSpeed API 又返回配额限制，因此这里仍明确标注为本地成绩，不把它冒充线上分数。
 
 真实服务专项检查：
 
@@ -163,7 +165,7 @@ pnpm eval:report
 - `vercel.json`：pnpm Monorepo Web 构建、SPA Rewrite、缓存与基础安全头；
 - [部署手册](docs/deployment.md)：Supabase、Render、DeepSeek、SiliconFlow、CORS、Auth URL 与无痕验收。
 
-开发期 Free API 空闲后会休眠，仅用于部署联调；投递简历前再经项目所有者授权升级为常驻实例，避免首次访问冷启动。当前 README 不填写未验证的公开 URL。
+当前公开环境使用 Render Free API，空闲后会休眠；投递简历前再经项目所有者授权升级为常驻实例，避免 HR 首次访问遇到约 50 秒冷启动。公开 Web 与 API 地址、CORS、安全响应头和真实 AI 主路径均已验证。
 
 ## 安全说明
 
@@ -178,7 +180,8 @@ pnpm eval:report
 
 ## 已知限制
 
-- 尚未完成 Render 公开部署与无痕线上验收；当前 Lighthouse 记录仅代表本地 production build；
+- Render Free API 会在空闲后休眠，不满足正式求职投递阶段的首访体验；升级常驻实例仍需项目所有者确认付费；
+- 当前 Lighthouse 记录仅代表本地 production build；线上重跑因工具下载超时及 PageSpeed 公共 API 配额限制尚未获得可复查分数；
 - PDF 只解析文本层，扫描件需先 OCR；
 - 当前未加入 Reranker，混合召回后直接执行证据门禁；
 - 只提供通用签名 Webhook，不接 Shopify、WhatsApp、邮件、支付或真实退款；
@@ -188,7 +191,7 @@ pnpm eval:report
 
 ## 项目截图
 
-以下截图来自真实本地 API、数据库与最新 Live Evaluation，不是静态设计稿。自动化视觉验收覆盖 1440×900、1280×800、768×1024 和 390×844，并检查每个尺寸没有水平溢出；公开部署后会从无痕环境再次录制核对。
+以下截图来自公开 Render 环境、真实 Supabase 数据库与最新 Live Evaluation，不是静态设计稿。自动化视觉验收覆盖 1440×900、1280×800、768×1024 和 390×844，并检查每个尺寸没有水平溢出。
 
 ![GroundDesk 深色落地页](docs/images/landing-desktop.png)
 

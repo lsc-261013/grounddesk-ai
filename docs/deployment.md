@@ -16,6 +16,12 @@ flowchart LR
 
 前端只持有 Supabase Publishable Key。Secret Key、数据库连接串、DeepSeek Key 和 SiliconFlow Key 只配置在 Render。部署不会创建 Render Postgres，因为 GroundDesk 的数据库、Auth、Storage 与 pgvector 统一由 Supabase 托管。
 
+当前已验证环境：
+
+- Web：https://grounddesk-ai-lsc.onrender.com
+- API：https://grounddesk-api-lsc.onrender.com
+- Health：https://grounddesk-api-lsc.onrender.com/health
+
 ## 1. 部署前门禁
 
 在干净工作区执行：
@@ -29,6 +35,8 @@ pnpm test:e2e
 ```
 
 `pnpm env:check` 只输出配置状态，不输出密钥。公开环境必须显示 `runtimeMode: connected`，并且 database、generation、embedding 都为 `true`。
+
+2026-08-31 的公开健康检查已满足上述条件。
 
 ## 2. Supabase
 
@@ -88,6 +96,8 @@ Demo 管理员和客服由 `pnpm auth:bootstrap` 创建并确认邮箱。普通�
 Render 自动提供 `PORT`；API 会优先使用显式 `API_PORT`，否则读取 `PORT`，并绑定 `0.0.0.0`。健康检查路径是 `/health`。
 
 开发联调阶段使用 Render Free Web Service（0.1 CPU / 512 MB）和免费 Static Site，不要求绑定付款方式。Free API 空闲 15 分钟后会休眠，下一次请求可能需要约一分钟唤醒，因此只作为开发期环境；投递简历前再经项目所有者确认升级为常驻实例。Free 实例不支持 Pre-deploy Command，幂等迁移暂时放在 API Build Command 中执行；升级付费实例后应恢复为独立的 Pre-deploy Command。
+
+Render 的 Node 镜像已经提供 pnpm shim，不要在 Build Command 中执行 `corepack enable`。真实首次部署曾因此尝试删除只读的 `/usr/bin/pnpm` 并以 `EROFS` 失败；当前 Blueprint 直接执行 `pnpm install --frozen-lockfile`，修复后 API 与 Static Site 均成功上线。
 
 首次部署后验证：
 

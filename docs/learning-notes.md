@@ -325,6 +325,8 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 部署前的最后一轮验收审计发现，Playwright 配置把 Base URL 和两个 Dev Server 固定在本地，无法把已经验证的浏览器路径原样迁移到公开站点。配置现支持 `E2E_BASE_URL`：设置时不启动本地服务，直接验证远程 Origin；不设置时保持原有本地行为。这让线上验收与本地验收使用同一份测试，而不是部署后靠另一套临时步骤产生证据漂移。
 
+真实 Render 首次部署又暴露了一个只会在托管镜像出现的问题：Build Command 里的 `corepack enable` 会尝试重建 `/usr/bin/pnpm`，但该路径在 Render Node 26 镜像中只读，API 和 Static Site 都以 `EROFS` 立即失败。仓库已声明 `packageManager: pnpm@11.19.0`，平台也已经提供 pnpm shim，因此修复是删除多余的 `corepack enable`，提交 Blueprint 后手动同步并审批。修复后的两个服务均为 Live，公网 `/health` 显示 connected；远程 Playwright 随后通过登录、角色隔离、真实引用、订单 Tool Call、无答案接管、客服结单和四档响应式检查。这一经历说明部署配置必须由真实平台日志验证，不能只靠本地构建推断。
+
 ### 继续追问时怎样深入
 
 可以说明为什么免费实例只能暂时把幂等迁移放进 Build Command、升级后为什么恢复 Pre-deploy、Seed 为什么不能进入部署链路、CORS Origin 为什么不能写通配符、静态前端与 API 如何分别回滚，以及常驻实例如何避免 HR 首次访问冷启动。
