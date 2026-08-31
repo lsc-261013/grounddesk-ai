@@ -44,7 +44,7 @@ const toggleLocale = (): void => {
 
     <RouterView />
 
-    <footer class="site-footer">
+    <footer v-if="!authStore.isInitializing" class="site-footer">
       <span>{{ t('footer') }}</span>
       <a v-if="authorName && authorUrl" :href="authorUrl" target="_blank" rel="noreferrer">
         {{ t('authorCredit', { name: authorName }) }}
