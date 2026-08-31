@@ -2,10 +2,9 @@ services:
   - type: web
     name: grounddesk-api-lsc
     runtime: node
-    plan: 0.5c-512mb
+    plan: free
     region: singapore
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @grounddesk/api build
-    preDeployCommand: pnpm db:migrate
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm --filter @grounddesk/api build
     startCommand: pnpm --filter @grounddesk/api start
     healthCheckPath: /health
     autoDeployTrigger: commit

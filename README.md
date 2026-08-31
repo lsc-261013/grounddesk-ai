@@ -159,11 +159,11 @@ pnpm eval:report
 
 仓库已提供：
 
-- `render.yaml`：Render Static Site 与 Starter API、幂等迁移、SPA Rewrite、安全头、平台 `PORT` 和 Secret 声明；
+- `render.yaml`：Render 免费 Static Site 与开发期 Free API、幂等迁移、SPA Rewrite、安全头、平台 `PORT` 和 Secret 声明；
 - `vercel.json`：pnpm Monorepo Web 构建、SPA Rewrite、缓存与基础安全头；
 - [部署手册](docs/deployment.md)：Supabase、Render、DeepSeek、SiliconFlow、CORS、Auth URL 与无痕验收。
 
-创建付费 Render 常驻实例、写入外部平台或公开仓库前必须由项目所有者明确授权。当前 README 不填写未验证的公开 URL。
+开发期 Free API 空闲后会休眠，仅用于部署联调；投递简历前再经项目所有者授权升级为常驻实例，避免首次访问冷启动。当前 README 不填写未验证的公开 URL。
 
 ## 安全说明
 

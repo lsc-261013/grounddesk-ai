@@ -87,7 +87,7 @@ Demo 管理员和客服由 `pnpm auth:bootstrap` 创建并确认邮箱。普通�
 
 Render 自动提供 `PORT`；API 会优先使用显式 `API_PORT`，否则读取 `PORT`，并绑定 `0.0.0.0`。健康检查路径是 `/health`。
 
-公开求职 Demo 使用用户已授权的 Starter 等价计划 `0.5c-512mb`（0.5 CPU / 512 MB），避免免费实例休眠影响首次体验。Static Site 使用 Render CDN，不创建额外数据库。
+开发联调阶段使用 Render Free Web Service（0.1 CPU / 512 MB）和免费 Static Site，不要求绑定付款方式。Free API 空闲 15 分钟后会休眠，下一次请求可能需要约一分钟唤醒，因此只作为开发期环境；投递简历前再经项目所有者确认升级为常驻实例。Free 实例不支持 Pre-deploy Command，幂等迁移暂时放在 API Build Command 中执行；升级付费实例后应恢复为独立的 Pre-deploy Command。
 
 首次部署后验证：
 

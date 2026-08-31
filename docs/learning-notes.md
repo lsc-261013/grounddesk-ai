@@ -301,7 +301,7 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 ### 数据流与关键文件
 
-`vercel.json` 保留为可迁移部署方案；当前经项目所有者授权，`render.yaml` 同时构建 `@grounddesk/web` Static Site 与 `@grounddesk/api` Starter Web Service。前端发布 `apps/web/dist` 并设置 SPA Rewrite，API 在 Pre-deploy 执行幂等迁移，再用 `/health` 验证实例。`apps/api/src/config/env.ts` 优先读取本地 `API_PORT`，部署时回退到 Render 提供的 `PORT`。
+`vercel.json` 保留为可迁移部署方案；`render.yaml` 同时构建 `@grounddesk/web` Static Site 与开发期 `@grounddesk/api` Free Web Service。前端发布 `apps/web/dist` 并设置 SPA Rewrite。由于 Free 实例不支持 Pre-deploy Command，API 的幂等迁移暂时在 Build Command 中执行，再用 `/health` 验证实例；升级常驻实例后恢复为独立 Pre-deploy。`apps/api/src/config/env.ts` 优先读取本地 `API_PORT`，部署时回退到 Render 提供的 `PORT`。
 
 ### 为什么这样设计
 
@@ -309,7 +309,7 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 ### 一个真实问题及修复
 
-部署审计发现 API 只读取 `API_PORT=8787`，而 Render 推荐运行时绑定自动提供的 `PORT`。这在本地完全正常，却可能让云端端口探测失败。修复为 `API_PORT ?? PORT`，同时保留显式本地覆盖，并增加两条环境解析测试验证优先级。
+部署审计先发现 API 只读取 `API_PORT=8787`，而 Render 推荐运行时绑定自动提供的 `PORT`；随后又发现原 Blueprint 为付费实例配置了 Free 计划不支持的 Pre-deploy Command。前者修复为 `API_PORT ?? PORT` 并增加环境解析测试，后者把幂等迁移移到开发期 Build Command，同时在部署文档中记录付费升级后的恢复路径。
 
 ### 如何手动验证
 
@@ -321,10 +321,10 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 ### 面试时 30 秒解释
 
-“我把部署当作代码的一部分：Render Static Site 配置 Monorepo Web 构建和 SPA 路由，Starter Web Service 配置幂等迁移、健康检查与平台端口回退。浏览器只得到 Publishable Key，所有高权限密钥留在 API。部署后还会从无痕窗口重新跑 RAG、工具和接管，而不是把本地通过当作上线完成。”
+“我把部署当作代码的一部分：Render Static Site 配置 Monorepo Web 构建和 SPA 路由，开发期 Free Web Service 配置幂等迁移、健康检查与平台端口回退。浏览器只得到 Publishable Key，所有高权限密钥留在 API。上线求职 Demo 前会升级常驻实例，并从无痕窗口重新跑 RAG、工具和接管。”
 
 部署前的最后一轮验收审计发现，Playwright 配置把 Base URL 和两个 Dev Server 固定在本地，无法把已经验证的浏览器路径原样迁移到公开站点。配置现支持 `E2E_BASE_URL`：设置时不启动本地服务，直接验证远程 Origin；不设置时保持原有本地行为。这让线上验收与本地验收使用同一份测试，而不是部署后靠另一套临时步骤产生证据漂移。
 
 ### 继续追问时怎样深入
 
-可以说明为什么数据库迁移适合 Pre-deploy 而 Seed 不适合、CORS Origin 为什么不能写通配符、静态前端与 API 如何分别回滚、付费常驻实例如何避免 HR 首次访问冷启动，以及密钥轮换顺序。
+可以说明为什么免费实例只能暂时把幂等迁移放进 Build Command、升级后为什么恢复 Pre-deploy、Seed 为什么不能进入部署链路、CORS Origin 为什么不能写通配符、静态前端与 API 如何分别回滚，以及常驻实例如何避免 HR 首次访问冷启动。
