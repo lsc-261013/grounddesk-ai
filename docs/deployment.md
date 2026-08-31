@@ -4,14 +4,14 @@
 
 ```mermaid
 flowchart LR
-  Browser[浏览器] -->|HTTPS| Vercel[Vue 3 / Vercel]
-  Browser -->|HTTPS + SSE| Render[Fastify / Render]
+  Browser[浏览器] -->|HTTPS| RenderStatic[Vue 3 / Render Static Site]
+  Browser -->|HTTPS + SSE| RenderAPI[Fastify / Render Web Service]
   Browser -->|Auth only| SupabaseAuth[Supabase Auth]
-  Render --> Supabase[(PostgreSQL + pgvector)]
-  Render --> Storage[Private Storage]
-  Render --> DeepSeek[DeepSeek]
-  Render --> SiliconFlow[SiliconFlow]
-  Render -->|HMAC webhook| Customer[客户系统]
+  RenderAPI --> Supabase[(PostgreSQL + pgvector)]
+  RenderAPI --> Storage[Private Storage]
+  RenderAPI --> DeepSeek[DeepSeek]
+  RenderAPI --> SiliconFlow[SiliconFlow]
+  RenderAPI -->|HMAC webhook| Customer[客户系统]
 ```
 
 前端只持有 Supabase Publishable Key。Secret Key、数据库连接串、DeepSeek Key 和 SiliconFlow Key 只配置在 Render。部署不会创建 Render Postgres，因为 GroundDesk 的数据库、Auth、Storage 与 pgvector 统一由 Supabase 托管。
@@ -63,8 +63,8 @@ pnpm knowledge:smoke
 
 部署前在 Supabase Auth → URL Configuration 设置：
 
-- Site URL：最终 Vercel URL；
-- Redirect URLs：最终 Vercel URL 及其 `/login`、`/onboarding` 路径；
+- Site URL：最终 Render Static Site URL；
+- Redirect URLs：最终 Render Static Site URL 及其 `/login`、`/onboarding` 路径；
 - 本地开发保留 `http://localhost:5173/**`。
 
 Demo 管理员和客服由 `pnpm auth:bootstrap` 创建并确认邮箱。普通注册是否要求邮件确认由 Supabase Auth 策略决定；不要为了演示关闭生产项目的安全控制。
@@ -75,19 +75,19 @@ Demo 管理员和客服由 `pnpm auth:bootstrap` 创建并确认邮箱。普通�
 
 必须填写：
 
-| 变量                       | 值                                                                             |
-| -------------------------- | ------------------------------------------------------------------------------ |
-| `WEB_ORIGIN`               | 最终 Vercel Origin，例如 `https://grounddesk.example.vercel.app`，不带末尾斜杠 |
-| `SUPABASE_URL`             | Supabase Project URL                                                           |
-| `SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable Key                                                       |
-| `SUPABASE_SECRET_KEY`      | Supabase Secret Key                                                            |
-| `SUPABASE_DB_URL`          | 已正确编码密码的 PostgreSQL URI                                                |
-| `DEEPSEEK_API_KEY`         | DeepSeek 服务端 Key                                                            |
-| `SILICONFLOW_API_KEY`      | SiliconFlow 服务端 Key                                                         |
+| 变量                       | 值                                           |
+| -------------------------- | -------------------------------------------- |
+| `WEB_ORIGIN`               | 最终 Render Static Site Origin，不带末尾斜杠 |
+| `SUPABASE_URL`             | Supabase Project URL                         |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable Key                     |
+| `SUPABASE_SECRET_KEY`      | Supabase Secret Key                          |
+| `SUPABASE_DB_URL`          | 已正确编码密码的 PostgreSQL URI              |
+| `DEEPSEEK_API_KEY`         | DeepSeek 服务端 Key                          |
+| `SILICONFLOW_API_KEY`      | SiliconFlow 服务端 Key                       |
 
 Render 自动提供 `PORT`；API 会优先使用显式 `API_PORT`，否则读取 `PORT`，并绑定 `0.0.0.0`。健康检查路径是 `/health`。
 
-公开求职 Demo 不应使用会休眠的实例。创建付费实例前必须由项目所有者确认当前 Render 价格和计划；推荐选择至少 0.5 CPU / 512 MB 的常驻 Web Service。不要在 Blueprint 中硬编码支付选择。
+公开求职 Demo 使用用户已授权的 Starter 等价计划 `0.5c-512mb`（0.5 CPU / 512 MB），避免免费实例休眠影响首次体验。Static Site 使用 Render CDN，不创建额外数据库。
 
 首次部署后验证：
 
@@ -97,9 +97,9 @@ GET https://<render-host>/health
 
 响应应为 `status: ok`、`runtimeMode: connected`，三个 Provider 状态均为已配置。
 
-## 4. Vercel Web
+## 4. Render Static Site
 
-从 GitHub 导入同一仓库，Project Root 保持仓库根目录。根目录 `vercel.json` 已定义 pnpm 安装、Web 构建、`apps/web/dist` 输出、SPA Rewrite 和安全响应头。
+同一份 `render.yaml` 定义 Vue Web 构建、`apps/web/dist` 发布目录、Vue Router SPA Rewrite、安全响应头和长期缓存。通过 Render Blueprint 导入仓库时，API 与 Static Site 一次创建；只有 Supabase 两项前端公开值需要在 Dashboard 填写。
 
 配置 Production 环境变量：
 
@@ -112,9 +112,9 @@ GET https://<render-host>/health
 | `VITE_AUTHOR_NAME`              | 落地页与页脚展示的公开作者名             |
 | `VITE_CONTACT_URL`              | 公开联系入口，例如作品集或职业邮箱链接   |
 
-`VITE_` 变量会进入前端构建产物，因此只能放公开值。任何 Secret Key、数据库连接串或模型 Key 都不得使用 `VITE_` 前缀。
+`VITE_` 变量会进入前端构建产物，因此只能放公开值。任何 Secret Key、数据库连接串或模型 Key 都不得使用 `VITE_` 前缀。仓库、作者和联系链接已作为非敏感 Blueprint 值提交；API Origin 和 Web CORS Origin 通过 `fromService` 引用 Render 自动注入的 `RENDER_EXTERNAL_URL`，避免硬编码平台子域。
 
-Vercel 首次分配域名后，回到 Render 把 `WEB_ORIGIN` 更新为该精确 Origin，并回到 Supabase 更新 Site URL / Redirect URLs。随后重新部署 API，完成 CORS 闭环。
+Blueprint 首次分配域名后，核对 API `/health` 和浏览器网络请求使用实际 `onrender.com` Origin。最后回到 Supabase 更新 Site URL / Redirect URLs，完成 Auth 闭环；Blueprint 每次同步都会让两个跨服务 Origin 跟随平台 URL。
 
 ## 5. 生产初始化与真实验收
 
@@ -151,12 +151,12 @@ pnpm test:e2e
 ## 6. 更新、回滚与故障定位
 
 - Render 每次部署前运行 `pnpm db:migrate`；只允许前向、可重复迁移，不在自动流程中运行 Seed。
-- Vercel 静态资源带内容 Hash，可以回滚到上一成功 Deployment；API 回滚前确认新迁移是否向后兼容。
+- Render Static Site 静态资源带内容 Hash，可以回滚到上一成功 Deployment；API 回滚前确认新迁移是否向后兼容。
 - `/health` 正常但聊天失败：检查 Provider 状态、Render 出站网络和用量额度。
 - 登录成功但 API 返回 401：检查 Supabase 项目是否一致，以及浏览器 Access Token 是否来自同一 Project URL。
 - 浏览器出现 CORS：`WEB_ORIGIN` 必须与地址栏 Origin 完全一致。
 - 数据库连接失败：重新复制连接 URI，并检查特殊字符编码、IPv4/Pooler 选择和 Supabase 网络限制。
-- 前端刷新子路由 404：确认 Vercel 使用仓库中的 SPA Rewrite。
+- 前端刷新子路由 404：确认 Render Static Site 已同步仓库中的 `/* → /index.html` Rewrite。
 
 ## 7. 密钥轮换
 

@@ -301,7 +301,7 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 ### 数据流与关键文件
 
-`vercel.json` 从仓库根安装 workspace，只构建 `@grounddesk/web` 并发布 `apps/web/dist`；`render.yaml` 构建 `@grounddesk/api`、在 Pre-deploy 执行幂等迁移，再用 `/health` 验证实例。`apps/api/src/config/env.ts` 优先读取本地 `API_PORT`，部署时回退到 Render 提供的 `PORT`。
+`vercel.json` 保留为可迁移部署方案；当前经项目所有者授权，`render.yaml` 同时构建 `@grounddesk/web` Static Site 与 `@grounddesk/api` Starter Web Service。前端发布 `apps/web/dist` 并设置 SPA Rewrite，API 在 Pre-deploy 执行幂等迁移，再用 `/health` 验证实例。`apps/api/src/config/env.ts` 优先读取本地 `API_PORT`，部署时回退到 Render 提供的 `PORT`。
 
 ### 为什么这样设计
 
@@ -316,12 +316,12 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 1. 不设置 `API_PORT`、仅设置 `PORT=10000`，确认 API 监听 10000；
 2. 同时设置两者，确认 `API_PORT` 优先；
 3. 用生产构建启动 API，访问 `/health`；
-4. 在 Vercel 刷新 `/console/products`，确认 SPA Rewrite 不返回 404；
+4. 在 Render Static Site 刷新 `/console/products`，确认 SPA Rewrite 不返回 404；
 5. 检查浏览器构建产物中只有 Project URL 与 Publishable Key，没有 Secret Key 或数据库 URI。
 
 ### 面试时 30 秒解释
 
-“我把部署当作代码的一部分：Vercel 配置 Monorepo 构建和 SPA 路由，Render 配置幂等迁移、健康检查与平台端口回退。浏览器只得到 Publishable Key，所有高权限密钥留在 API。部署后还会从无痕窗口重新跑 RAG、工具和接管，而不是把本地通过当作上线完成。”
+“我把部署当作代码的一部分：Render Static Site 配置 Monorepo Web 构建和 SPA 路由，Starter Web Service 配置幂等迁移、健康检查与平台端口回退。浏览器只得到 Publishable Key，所有高权限密钥留在 API。部署后还会从无痕窗口重新跑 RAG、工具和接管，而不是把本地通过当作上线完成。”
 
 部署前的最后一轮验收审计发现，Playwright 配置把 Base URL 和两个 Dev Server 固定在本地，无法把已经验证的浏览器路径原样迁移到公开站点。配置现支持 `E2E_BASE_URL`：设置时不启动本地服务，直接验证远程 Origin；不设置时保持原有本地行为。这让线上验收与本地验收使用同一份测试，而不是部署后靠另一套临时步骤产生证据漂移。
 

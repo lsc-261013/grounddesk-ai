@@ -6,10 +6,10 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 
 ## 在线 Demo
 
-- 公开地址：尚未部署，完成 Vercel 与 Render 验收后填写；
+- 公开地址：Render 部署完成并通过线上验收后填写；
 - Demo Workspace：虚构消费电子品牌 Avenlo，所有商品、订单与顾客均为模拟数据；
 - 访客无需 API Key；公开部署后可直接体验知识引用、订单查询和人工接管；
-- GitHub：由项目所有者确认公开仓库地址后，通过 `VITE_GITHUB_URL` 展示。
+- GitHub：[lsc-261013/grounddesk-ai](https://github.com/lsc-261013/grounddesk-ai)。
 
 ## 核心价值
 
@@ -56,7 +56,7 @@ pnpm dev
 | Data    | Supabase PostgreSQL、Auth、Private Storage、pgvector、RLS                            |
 | AI      | DeepSeek Generation / Tool Calling、SiliconFlow `BAAI/bge-m3` Embedding              |
 | Quality | Vitest、Fastify Inject、Playwright、ESLint、Prettier、真实 Provider Smoke Test       |
-| Hosting | Vercel Web、Render API、Supabase Data/Auth/Storage                                   |
+| Hosting | Render Static Site/Web Service、Supabase Data/Auth/Storage                           |
 
 ## 架构概览
 
@@ -159,9 +159,9 @@ pnpm eval:report
 
 仓库已提供：
 
-- `render.yaml`：API 构建、幂等迁移、健康检查、平台 `PORT` 和 Secret 声明；
+- `render.yaml`：Render Static Site 与 Starter API、幂等迁移、SPA Rewrite、安全头、平台 `PORT` 和 Secret 声明；
 - `vercel.json`：pnpm Monorepo Web 构建、SPA Rewrite、缓存与基础安全头；
-- [部署手册](docs/deployment.md)：Supabase、Render、Vercel、DeepSeek、SiliconFlow、CORS、Auth URL 与无痕验收。
+- [部署手册](docs/deployment.md)：Supabase、Render、DeepSeek、SiliconFlow、CORS、Auth URL 与无痕验收。
 
 创建付费 Render 常驻实例、写入外部平台或公开仓库前必须由项目所有者明确授权。当前 README 不填写未验证的公开 URL。
 
@@ -178,7 +178,7 @@ pnpm eval:report
 
 ## 已知限制
 
-- 尚未完成 Vercel/Render 公开部署与无痕线上验收；当前 Lighthouse 记录仅代表本地 production build；
+- 尚未完成 Render 公开部署与无痕线上验收；当前 Lighthouse 记录仅代表本地 production build；
 - PDF 只解析文本层，扫描件需先 OCR；
 - 当前未加入 Reranker，混合召回后直接执行证据门禁；
 - 只提供通用签名 Webhook，不接 Shopify、WhatsApp、邮件、支付或真实退款；

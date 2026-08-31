@@ -1,12 +1,14 @@
 services:
   - type: web
-    name: grounddesk-api
+    name: grounddesk-api-lsc
     runtime: node
+    plan: 0.5c-512mb
+    region: singapore
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @grounddesk/api build
     preDeployCommand: pnpm db:migrate
     startCommand: pnpm --filter @grounddesk/api start
     healthCheckPath: /health
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     maxShutdownDelaySeconds: 30
     envVars:
       - key: RUNTIME_MODE
@@ -18,7 +20,10 @@ services:
       - key: LOG_LEVEL
         value: info
       - key: WEB_ORIGIN
-        sync: false
+        fromService:
+          type: web
+          name: grounddesk-ai-lsc
+          envVarKey: RENDER_EXTERNAL_URL
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
@@ -71,3 +76,43 @@ services:
         value: 8000
       - key: WEBHOOK_MAX_ATTEMPTS
         value: 3
+
+  - type: web
+    name: grounddesk-ai-lsc
+    runtime: static
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @grounddesk/web build
+    staticPublishPath: apps/web/dist
+    autoDeployTrigger: commit
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: grounddesk-api-lsc
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_GITHUB_URL
+        value: https://github.com/lsc-261013/grounddesk-ai
+      - key: VITE_AUTHOR_NAME
+        value: 吕帅超
+      - key: VITE_CONTACT_URL
+        value: https://github.com/lsc-261013
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=()
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
