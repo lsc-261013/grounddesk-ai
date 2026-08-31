@@ -136,7 +136,7 @@ $env:E2E_LIVE_AI = 'true'
 pnpm test:e2e
 ```
 
-2026-08-31 公网 Lighthouse 13 首次实测结果：桌面端 Performance 98 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 94 / 100 / 100 / 100，四项均达到 90+。报告定位到认证初始化期间页脚提前出现造成 CLS 0.103；修复提交 `46208b7` 在本地 production 复测为 Performance 98、CLS 0，仍需部署后再次记录最终公网分数。此前本地基线为桌面 99/100/100/100、移动 97/100/100/100。
+2026-09-01 公网 Lighthouse 13 最终复测结果：桌面端 Performance 99 / Accessibility 100 / Best Practices 100 / SEO 100，FCP/LCP 0.7 秒、TBT 0 ms、CLS 0.00008；移动端为 98 / 100 / 100 / 100，FCP/LCP 1.9 秒、TBT 40 ms、CLS 0。此前首轮移动 CLS 0.103 的根因是认证初始化期间页脚先于路由内容出现，提交 `46208b7` 已部署并通过零位移节点回归。
 
 真实服务专项检查：
 
@@ -180,8 +180,7 @@ pnpm eval:report
 
 ## 已知限制
 
-- Render Free API 会在空闲后休眠，不满足正式求职投递阶段的首访体验；升级常驻实例仍需项目所有者确认付费；
-- 当前公网 Lighthouse 已达到四项 90+，但 CLS 0 修复提交 `46208b7` 尚待 Render 部署并复测；
+- Render Free API 会在空闲后休眠；项目所有者已接受该开发期限制，正式投递简历前应升级为常驻实例以保证首访体验；
 - PDF 只解析文本层，扫描件需先 OCR；
 - 当前未加入 Reranker，混合召回后直接执行证据门禁；
 - 只提供通用签名 Webhook，不接 Shopify、WhatsApp、邮件、支付或真实退款；

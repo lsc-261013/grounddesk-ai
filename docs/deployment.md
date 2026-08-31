@@ -77,6 +77,8 @@ pnpm knowledge:smoke
 
 Demo 管理员和客服由 `pnpm auth:bootstrap` 创建并确认邮箱。普通注册是否要求邮件确认由 Supabase Auth 策略决定；不要为了演示关闭生产项目的安全控制。
 
+2026-09-01 已在生产项目核对：Site URL 为 `https://grounddesk-ai-lsc.onrender.com`，Redirect URL 包含 `https://grounddesk-ai-lsc.onrender.com/**` 与 `http://localhost:5173/**`；公开 Auth 设置中邮箱注册已启用。
+
 ## 3. Render API
 
 仓库根目录的 `render.yaml` 定义构建、迁移、启动、健康检查和非敏感默认值。它不会写入任何密钥。根据 [Render Blueprint](https://render.com/docs/blueprint-spec) 创建服务，并在首次导入时填写所有 `sync: false` 项。
@@ -148,7 +150,7 @@ pnpm eval:report
 6. 运行 Lighthouse，记录 Performance、Accessibility、Best Practices、SEO；
 7. 检查前端 Source、网络响应和 Git 历史中不存在密钥。
 
-2026-08-31 首次公网 Lighthouse 13 记录为：桌面 98/100/100/100，移动 94/100/100/100（Performance / Accessibility / Best Practices / SEO）。移动报告的 CLS 0.103 来自认证初始化期间页脚先于路由内容出现；提交 `46208b7` 在本地 production 回归中将 CLS 降为 0，部署后必须用同一命令复测并更新最终记录。
+2026-09-01 最终公网 Lighthouse 13 记录为：桌面 99/100/100/100，移动 98/100/100/100（Performance / Accessibility / Best Practices / SEO）。桌面 FCP/LCP 0.7 秒、TBT 0 ms、CLS 0.00008；移动 FCP/LCP 1.9 秒、TBT 40 ms、CLS 0。提交 `46208b7` 已部署，认证初始化期间页脚提前出现造成的首轮移动 CLS 0.103 已消除。
 
 部署后的浏览器主路径不需要另写临时脚本。把 Playwright 指向公开 Web Origin，即可跳过本地 Dev Server 并复用仓库中的真实验收：
 
