@@ -8,7 +8,6 @@ services:
     startCommand: pnpm --filter @grounddesk/api start
     healthCheckPath: /health
     autoDeployTrigger: commit
-    maxShutdownDelaySeconds: 30
     envVars:
       - key: RUNTIME_MODE
         value: connected
