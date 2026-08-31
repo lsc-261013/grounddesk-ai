@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm --filter @grounddesk/api build
+    buildCommand: pnpm install --frozen-lockfile && pnpm db:migrate && pnpm --filter @grounddesk/api build
     startCommand: pnpm --filter @grounddesk/api start
     healthCheckPath: /health
     autoDeployTrigger: commit
@@ -78,7 +78,7 @@ services:
   - type: web
     name: grounddesk-ai-lsc
     runtime: static
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @grounddesk/web build
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @grounddesk/web build
     staticPublishPath: apps/web/dist
     autoDeployTrigger: commit
     envVars:
