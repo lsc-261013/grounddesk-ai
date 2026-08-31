@@ -211,6 +211,7 @@ scripts              本地验证和维护脚本
 
 ## 文档索引
 
+- [逐项验收矩阵](docs/acceptance-matrix.md)
 - [系统架构](docs/architecture.md)
 - [RAG 数据流](docs/rag-pipeline.md)
 - [Agent 工作流](docs/agent-workflow.md)
