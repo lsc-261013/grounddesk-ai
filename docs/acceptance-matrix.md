@@ -23,16 +23,16 @@
 
 ## 产品、视觉与质量
 
-| 验收域                             | 当前状态   | 权威证据                                                                                 |
-| ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
-| 双语落地页、公开 Demo、核心控制台  | 线上已验证 | Vue I18n 持久化、语言单测、公网浏览器刷新 E2E                                            |
-| Hero 可信流程动画                  | 本地已验证 | `TrustFlowAnimation.vue`；视口触发、悬停暂停、离屏暂停、Reduced Motion E2E               |
-| 服务端事件驱动聊天轨迹             | 本地已验证 | SSE Stage/Token/Citation/Tool 事件；无写死等待；Live Demo E2E                            |
-| 1440、1280、768、390 响应式        | 线上已验证 | 公网 `visual-audit.spec.ts` 四视口无水平溢出；三张线上真实数据截图                       |
-| 键盘、焦点、Reduced Motion、对比度 | 本地已验证 | 可见 Focus 样式、语义控件、Reduced Motion 测试、Lighthouse Accessibility 100             |
-| 本地 production Lighthouse         | 本地已验证 | 桌面 99/100/100/100；移动 97/100/100/100（Performance/Accessibility/Best Practices/SEO） |
-| TypeScript、lint、测试、构建       | 本地已验证 | TypeScript strict；lint 零告警；Shared 3 + API 73 + Web 10；production build 通过        |
-| 真实确定性评测                     | 本地已验证 | Live Run `b2310ecb-6383-4259-9c3b-96bd3f1281c4`，26/26，无失败                           |
+| 验收域                             | 当前状态   | 权威证据                                                                          |
+| ---------------------------------- | ---------- | --------------------------------------------------------------------------------- |
+| 双语落地页、公开 Demo、核心控制台  | 线上已验证 | Vue I18n 持久化、语言单测、公网浏览器刷新 E2E                                     |
+| Hero 可信流程动画                  | 本地已验证 | `TrustFlowAnimation.vue`；视口触发、悬停暂停、离屏暂停、Reduced Motion E2E        |
+| 服务端事件驱动聊天轨迹             | 本地已验证 | SSE Stage/Token/Citation/Tool 事件；无写死等待；Live Demo E2E                     |
+| 1440、1280、768、390 响应式        | 线上已验证 | 公网 `visual-audit.spec.ts` 四视口无水平溢出；三张线上真实数据截图                |
+| 键盘、焦点、Reduced Motion、对比度 | 本地已验证 | 可见 Focus 样式、语义控件、Reduced Motion 测试、Lighthouse Accessibility 100      |
+| 公网 production Lighthouse         | 线上已验证 | 桌面 98/100/100/100；移动 94/100/100/100；四项均达到 90+                          |
+| TypeScript、lint、测试、构建       | 本地已验证 | TypeScript strict；lint 零告警；Shared 3 + API 73 + Web 10；production build 通过 |
+| 真实确定性评测                     | 本地已验证 | Live Run `b2310ecb-6383-4259-9c3b-96bd3f1281c4`，26/26，无失败                    |
 
 ## 文档与所有者交付
 
@@ -47,6 +47,6 @@ README、架构、RAG、Agent、评测、部署、演示脚本、面试问答、
 以下项目仍未完成前不得宣称达到原始“最终求职上线”标准：
 
 1. 在 Supabase Dashboard 核对最终 Site URL / Redirect URLs；密码登录已在线通过，但邮件链接流程仍需该配置闭环；
-2. 重新获得公网 Lighthouse 分数；本次 Lighthouse 下载超时且 PageSpeed 公共 API 返回配额限制，现有 99/100/100/100 与 97/100/100/100 仅代表本地 production；
+2. 在 Render 部署 CLS 修复提交 `46208b7` 并复跑公网 Lighthouse；当前公网已达到桌面 98/100/100/100、移动 94/100/100/100，修复后本地 production 为 Performance 98、CLS 0；
 3. 投递简历前经项目所有者确认升级 API 为常驻实例，避免 Free 实例休眠造成首次访问冷启动；
 4. 项目所有者亲手完成 `owner-checklist.md`，尤其是干净 Clone、真实文档上传、政策变更与无 AI 提示三分钟演示。

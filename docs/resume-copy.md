@@ -1,6 +1,6 @@
 # GroundDesk 求职文案
 
-以下文案只描述仓库中已经实现并验证的能力。在线 URL、GitHub URL 和评测结果来自真实部署；Lighthouse 只引用明确标注的本地 production 成绩，不预估线上分数。
+以下文案只描述仓库中已经实现并验证的能力。在线 URL、GitHub URL、评测结果和 Lighthouse 分数均来自真实部署，不使用预估值。
 
 ## 简历项目描述
 

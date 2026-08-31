@@ -148,6 +148,8 @@ pnpm eval:report
 6. 运行 Lighthouse，记录 Performance、Accessibility、Best Practices、SEO；
 7. 检查前端 Source、网络响应和 Git 历史中不存在密钥。
 
+2026-08-31 首次公网 Lighthouse 13 记录为：桌面 98/100/100/100，移动 94/100/100/100（Performance / Accessibility / Best Practices / SEO）。移动报告的 CLS 0.103 来自认证初始化期间页脚先于路由内容出现；提交 `46208b7` 在本地 production 回归中将 CLS 降为 0，部署后必须用同一命令复测并更新最终记录。
+
 部署后的浏览器主路径不需要另写临时脚本。把 Playwright 指向公开 Web Origin，即可跳过本地 Dev Server 并复用仓库中的真实验收：
 
 ```powershell

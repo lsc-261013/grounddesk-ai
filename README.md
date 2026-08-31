@@ -136,7 +136,7 @@ $env:E2E_LIVE_AI = 'true'
 pnpm test:e2e
 ```
 
-2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 99 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 97 / 100 / 100 / 100。线上 Playwright 与响应头已实测，但本次公网 Lighthouse 工具下载超时、PageSpeed API 又返回配额限制，因此这里仍明确标注为本地成绩，不把它冒充线上分数。
+2026-08-31 公网 Lighthouse 13 首次实测结果：桌面端 Performance 98 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 94 / 100 / 100 / 100，四项均达到 90+。报告定位到认证初始化期间页脚提前出现造成 CLS 0.103；修复提交 `46208b7` 在本地 production 复测为 Performance 98、CLS 0，仍需部署后再次记录最终公网分数。此前本地基线为桌面 99/100/100/100、移动 97/100/100/100。
 
 真实服务专项检查：
 
@@ -181,7 +181,7 @@ pnpm eval:report
 ## 已知限制
 
 - Render Free API 会在空闲后休眠，不满足正式求职投递阶段的首访体验；升级常驻实例仍需项目所有者确认付费；
-- 当前 Lighthouse 记录仅代表本地 production build；线上重跑因工具下载超时及 PageSpeed 公共 API 配额限制尚未获得可复查分数；
+- 当前公网 Lighthouse 已达到四项 90+，但 CLS 0 修复提交 `46208b7` 尚待 Render 部署并复测；
 - PDF 只解析文本层，扫描件需先 OCR；
 - 当前未加入 Reranker，混合召回后直接执行证据门禁；
 - 只提供通用签名 Webhook，不接 Shopify、WhatsApp、邮件、支付或真实退款；
