@@ -309,7 +309,7 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 ### 一个真实问题及修复
 
-部署审计先发现 API 只读取 `API_PORT=8787`，而 Render 推荐运行时绑定自动提供的 `PORT`；随后又发现原 Blueprint 为付费实例配置了 Free 计划不支持的 Pre-deploy Command。前者修复为 `API_PORT ?? PORT` 并增加环境解析测试，后者把幂等迁移移到开发期 Build Command，同时在部署文档中记录付费升级后的恢复路径。
+部署审计先发现 API 只读取 `API_PORT=8787`，而 Render 推荐运行时绑定自动提供的 `PORT`；随后 Render 的真实 Blueprint 校验又指出 Free 计划不支持 Pre-deploy Command 与 `maxShutdownDelaySeconds`。端口修复为 `API_PORT ?? PORT` 并增加环境解析测试；迁移暂时移到开发期 Build Command；关闭延迟字段从 Free 配置删除，并在部署文档中记录付费升级后的恢复路径。
 
 ### 如何手动验证
 

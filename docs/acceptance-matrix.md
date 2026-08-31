@@ -38,15 +38,15 @@
 
 README、架构、RAG、Agent、评测、部署、演示脚本、面试问答、简历文案、Owner Checklist、英文自由职业服务包与持续学习笔记均已存在，并只描述真实实现。
 
-## 仍待外部状态
+## 外部部署状态
 
-以下项目需要账号、公开写入或付费授权，未完成前不得宣布最终上线：
+截至 2026-08-31，公共 GitHub 仓库已创建并推送，项目所有者已授权 Render Static Site 作为前端托管；作者、联系地址与仓库 URL 已写入版本化部署配置。Render 已真实读取并校验 Blueprint，期间发现并修复了 Free Web Service 不支持 `maxShutdownDelaySeconds` 的平台差异。
 
-1. 创建并推送公共 GitHub 仓库；
-2. 确定 Vercel，或明确授权 Render Static Site 作为等价前端托管；
-3. 确认 Render 常驻 API 费用，创建 Web Service 并填写服务端 Secret；
-4. 填写 `VITE_AUTHOR_NAME`、`VITE_CONTACT_URL` 和 `VITE_GITHUB_URL`；
-5. 将最终 Web Origin 写入 API CORS 与 Supabase Auth URL；
-6. 在无痕窗口重跑登录、引用问答、订单工具、拒答接管与客服结单；
-7. 对公开 URL 重跑四视口、Lighthouse 与 Secret/响应头检查；
-8. 把最终 URL 写入 README、简历文案和演示脚本。
+以下项目未完成前不得宣布最终上线：
+
+1. 经项目所有者明确确认后，将本地服务端 Secret 安全写入 Render，并创建 Free API 与 Static Site；
+2. 将最终 Web Origin 写入 Supabase Auth URL；API CORS Origin 已由 Blueprint 服务引用自动生成；
+3. 在无痕窗口重跑登录、引用问答、订单工具、拒答接管与客服结单；
+4. 对公开 URL 重跑四视口、Lighthouse、Secret 模式与响应头检查；
+5. 把最终 URL 写入 README、简历文案和演示脚本；
+6. 投递简历前经项目所有者确认升级 API 为常驻实例，避免 Free 实例休眠造成首次访问冷启动。
