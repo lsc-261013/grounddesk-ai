@@ -2,6 +2,14 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
+const flattenMessageKeys = (value: unknown, prefix = ''): string[] => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return [prefix]
+
+  return Object.entries(value).flatMap(([key, child]) =>
+    flattenMessageKeys(child, prefix ? `${prefix}.${key}` : key),
+  )
+}
+
 describe('locale persistence', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -46,5 +54,14 @@ describe('locale persistence', () => {
 
     i18n.global.locale.value = 'en-US'
     expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe('Designed and built by Alex')
+  })
+
+  it('keeps every interface message key available in both locales', async () => {
+    const { i18n } = await import('../src/i18n')
+    const chineseKeys = flattenMessageKeys(i18n.global.getLocaleMessage('zh-CN')).sort()
+    const englishKeys = flattenMessageKeys(i18n.global.getLocaleMessage('en-US')).sort()
+
+    expect(chineseKeys).toEqual(englishKeys)
+    expect(chineseKeys.length).toBeGreaterThan(100)
   })
 })
