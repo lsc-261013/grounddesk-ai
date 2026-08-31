@@ -126,6 +126,14 @@ pnpm test:e2e
 
 `pnpm validate` 依次执行 TypeScript、ESLint、单元/集成测试和生产构建。默认 E2E 不依赖外部模型；需要验证真实公开 Demo 时，在本地设置 `E2E_LIVE_AI=true` 后单独运行 live public demo 用例，该用例会产生少量 DeepSeek 与 SiliconFlow 用量。
 
+部署后可将 `E2E_BASE_URL` 设置为公开 Web Origin；Playwright 会跳过本地开发服务器，直接对线上站点执行同一套登录、权限、RAG、工具与接管验收。PowerShell 示例：
+
+```powershell
+$env:E2E_BASE_URL = 'https://your-public-web-origin.example'
+$env:E2E_LIVE_AI = 'true'
+pnpm test:e2e
+```
+
 2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 99 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 97 / 100 / 100 / 100。公开部署后必须从无痕环境重跑，不能把本地网络结果直接当作线上成绩。
 
 真实服务专项检查：

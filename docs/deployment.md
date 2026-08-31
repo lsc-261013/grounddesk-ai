@@ -138,6 +138,16 @@ pnpm eval:report
 6. 运行 Lighthouse，记录 Performance、Accessibility、Best Practices、SEO；
 7. 检查前端 Source、网络响应和 Git 历史中不存在密钥。
 
+部署后的浏览器主路径不需要另写临时脚本。把 Playwright 指向公开 Web Origin，即可跳过本地 Dev Server 并复用仓库中的真实验收：
+
+```powershell
+$env:E2E_BASE_URL = 'https://your-public-web-origin.example'
+$env:E2E_LIVE_AI = 'true'
+pnpm test:e2e
+```
+
+如需重新录制四视口证据，再设置 `$env:E2E_VISUAL_AUDIT = 'true'`。`E2E_RESET_DEMO` 默认关闭，因为它会清空 Demo 运营记录；仅在确认需要恢复公开演示基线时临时开启。
+
 ## 6. 更新、回滚与故障定位
 
 - Render 每次部署前运行 `pnpm db:migrate`；只允许前向、可重复迁移，不在自动流程中运行 Seed。
@@ -150,4 +160,4 @@ pnpm eval:report
 
 ## 7. 密钥轮换
 
-密钥只写入本地 `.env`、Render Secret Environment Variables 和 Vercel 的三项公开构建变量。发生疑似泄漏时先在供应商侧轮换，再更新 Render，最后检查日志和 Git 历史。Webhook 每个 Endpoint 有独立签名密钥，创建时只显示一次；数据库仅保存由服务端主密钥派生加密键加密后的密文。
+密钥只写入本地 `.env` 和 Render Secret Environment Variables；Vite 构建变量只允许放 API Origin、Supabase Publishable Key、仓库链接和公开作者资料。发生疑似泄漏时先在供应商侧轮换，再更新 Render，最后检查日志和 Git 历史。Webhook 每个 Endpoint 有独立签名密钥，创建时只显示一次；数据库仅保存由服务端主密钥派生加密键加密后的密文。
