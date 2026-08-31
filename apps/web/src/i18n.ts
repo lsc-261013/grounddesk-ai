@@ -77,6 +77,7 @@ export const i18n = createI18n({
           description:
             'Avenlo 是明确标注的虚构消费电子 Demo 商家。商品、订单和政策都来自数据库，访客可以自由提问并真实触发检索与工具。',
           loading: '正在读取真实商品数据…',
+          loadError: '商品数据暂时不可用，请稍后刷新重试。',
           calloutTitle: '四条路径，一页体验',
           calloutDescription: '兼容性、保修、订单查询，以及应该拒答的问题。',
           openDemo: '进入 Avenlo Demo',
@@ -610,6 +611,7 @@ export const i18n = createI18n({
           description:
             'Avenlo is a clearly labeled fictional consumer-electronics Demo merchant. Products, orders, and policies come from the database, and visitors can freely trigger live retrieval and tools.',
           loading: 'Loading live product data…',
+          loadError: 'Product data is temporarily unavailable. Refresh in a moment.',
           calloutTitle: 'Four paths, one page',
           calloutDescription:
             'Compatibility, warranty, order lookup, and a question that must be refused.',

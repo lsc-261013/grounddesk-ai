@@ -451,6 +451,10 @@
   border: 0;
 }
 
+.landing-product-placeholder {
+  visibility: hidden;
+}
+
 .landing-product-grid article > span,
 .landing-product-grid small {
   color: #7f8a9b;

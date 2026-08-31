@@ -91,15 +91,37 @@ onMounted(() => void showcaseStore.load())
         <p>{{ t('landing.demo.description') }}</p>
       </header>
       <div class="landing-product-grid" :aria-busy="showcaseStore.isLoading">
-        <article v-for="product in featuredProducts" :key="product.id">
-          <span>{{ product.category }}</span>
-          <svg viewBox="0 0 320 240" role="img" :aria-label="productName(product)">
-            <use :href="`/products.svg#${productVisualId(product.model)}`" />
-          </svg>
-          <h3>{{ productName(product) }}</h3>
-          <small>{{ product.model }} · {{ product.sku }}</small>
-        </article>
-        <div v-if="showcaseStore.isLoading" class="landing-product-loading">
+        <template v-if="featuredProducts.length > 0">
+          <article v-for="product in featuredProducts" :key="product.id">
+            <span>{{ product.category }}</span>
+            <svg viewBox="0 0 320 240" role="img" :aria-label="productName(product)">
+              <use :href="`/products.svg#${productVisualId(product.model)}`" />
+            </svg>
+            <h3>{{ productName(product) }}</h3>
+            <small>{{ product.model }} · {{ product.sku }}</small>
+          </article>
+        </template>
+        <template v-else>
+          <article
+            v-for="placeholderIndex in 4"
+            :key="`product-placeholder-${placeholderIndex}`"
+            class="landing-product-placeholder"
+            aria-hidden="true"
+          >
+            <span>&nbsp;</span>
+            <svg viewBox="0 0 320 240" />
+            <h3>&nbsp;</h3>
+            <small>&nbsp;</small>
+          </article>
+        </template>
+        <div v-if="showcaseStore.error" class="landing-product-loading" role="alert">
+          {{ t('landing.demo.loadError') }}
+        </div>
+        <div
+          v-else-if="showcaseStore.isLoading || featuredProducts.length === 0"
+          class="landing-product-loading"
+          role="status"
+        >
           {{ t('landing.demo.loading') }}
         </div>
       </div>
