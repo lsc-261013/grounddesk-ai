@@ -2,7 +2,7 @@
 
 > 每一次回答，都有依据。Support answers you can verify.
 
-GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客服知识库 SaaS。它把“模型会回答”约束为“答案有来源、无依据会拒答、业务动作有确定边界”。公开 Demo 与最终截图仍待部署验收；仓库不会使用占位 URL、伪造指标或虚构客户评价。
+GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客服知识库 SaaS。它把“模型会回答”约束为“答案有来源、无依据会拒答、业务动作有确定边界”。本地验收截图已经由真实数据库状态录制，公开 Demo 仍待部署验收；仓库不会使用占位 URL、伪造指标或虚构客户评价。
 
 ## 在线 Demo
 
@@ -126,6 +126,8 @@ pnpm test:e2e
 
 `pnpm validate` 依次执行 TypeScript、ESLint、单元/集成测试和生产构建。默认 E2E 不依赖外部模型；需要验证真实公开 Demo 时，在本地设置 `E2E_LIVE_AI=true` 后单独运行 live public demo 用例，该用例会产生少量 DeepSeek 与 SiliconFlow 用量。
 
+2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 94 / Accessibility 95 / Best Practices 96 / SEO 91；移动端为 97 / 95 / 96 / 91。公开部署后必须从无痕环境重跑，不能把本地网络结果直接当作线上成绩。
+
 真实服务专项检查：
 
 ```bash
@@ -168,7 +170,7 @@ pnpm eval:report
 
 ## 已知限制
 
-- 尚未完成 Vercel/Render 公开部署、无痕线上验收和最终 Lighthouse 记录；
+- 尚未完成 Vercel/Render 公开部署与无痕线上验收；当前 Lighthouse 记录仅代表本地 production build；
 - PDF 只解析文本层，扫描件需先 OCR；
 - 当前未加入 Reranker，混合召回后直接执行证据门禁；
 - 只提供通用签名 Webhook，不接 Shopify、WhatsApp、邮件、支付或真实退款；
@@ -178,7 +180,15 @@ pnpm eval:report
 
 ## 项目截图
 
-本地桌面与 390×844 移动端已完成浏览器视觉检查。最终 README 截图会在公开部署后从无痕环境重新录制，避免使用与线上状态不一致的开发截图。
+以下截图来自真实本地 API、数据库与最新 Live Evaluation，不是静态设计稿。自动化视觉验收覆盖 1440×900、1280×800、768×1024 和 390×844，并检查每个尺寸没有水平溢出；公开部署后会从无痕环境再次录制核对。
+
+![GroundDesk 深色落地页](docs/images/landing-desktop.png)
+
+![GroundDesk 精密浅色控制台](docs/images/console-desktop.png)
+
+<p align="center">
+  <img src="docs/images/demo-mobile.png" width="390" alt="GroundDesk 390×844 移动端公开 Demo 与客服组件" />
+</p>
 
 演示账号是公开测试资料，不用于真实业务：
 

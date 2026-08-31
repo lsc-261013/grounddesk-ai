@@ -238,13 +238,16 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 一键 Demo Reset 的真实浏览器验收又发现两层只在完整路径出现的问题：前端先对无 Body 的 POST 错误声明 JSON，修复为仅在确有非 FormData Body 时设置 `Content-Type`；请求进入数据库后，`tickets.conversation_id` 的 `ON DELETE RESTRICT` 阻止先删会话。Reset 事务因此改为先删除工单（回复级联），再删除会话。每次失败都由事务完整回滚，没有留下半重置数据。
 
+视觉证据录制的首版截图虽然没有布局溢出，却把异步商品、评测和运营指标拍在 loading 阶段。修复不是添加固定等待时间，而是等待 4 件精选商品、8 件 Demo 商品、Live Evaluation 卡片和控制台骨架消失等真实 DOM 条件。最终脚本覆盖 1440×900、1280×800、768×1024 与 390×844；本地 production Lighthouse 桌面四项为 94/95/96/91，移动端为 97/95/96/91。
+
 ### 如何手动验证
 
 1. 运行 `pnpm test:e2e`，确认三条确定性浏览器用例通过；
 2. 设置 `E2E_LIVE_AI=true` 后运行 Live Demo 用例，观察订单工具和人工工单；
 3. 在 390×844 下打开 `/demo`，确认 `scrollWidth` 不超过视口；
 4. 用客服账号直接访问 `/console/settings`，必须显示无权限状态；
-5. 切换英文并刷新，内容与 `<html lang>` 都必须保持 `en-US`。
+5. 切换英文并刷新，内容与 `<html lang>` 都必须保持 `en-US`；
+6. 设置 `E2E_VISUAL_AUDIT=true` 运行视觉验收，确认四个目标尺寸通过且截图在真实数据就绪后生成。
 
 ### 面试时 30 秒解释
 
