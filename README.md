@@ -79,14 +79,14 @@ flowchart LR
 
 以 `.env.example` 为唯一模板。不要提交 `.env`。
 
-| 类别       | 关键变量                                                                                     | 暴露范围                        |
-| ---------- | -------------------------------------------------------------------------------------------- | ------------------------------- |
-| 运行       | `RUNTIME_MODE`、`API_HOST`、`API_PORT`、`WEB_ORIGIN`                                         | API                             |
-| Supabase   | `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY`、`SUPABASE_DB_URL`         | API；Secret/DB URL 禁止进入 Web |
-| Generation | `DEEPSEEK_API_KEY`、Base URL、模型、超时、成本费率                                           | API                             |
-| Embedding  | `SILICONFLOW_API_KEY`、Base URL、模型、维度、超时                                            | API                             |
-| Demo 安全  | 请求/Token 日额度、IP/Session 限流、上传与 Chunk 限制                                        | API                             |
-| Web        | `VITE_API_BASE_URL`、`VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY`、`VITE_GITHUB_URL` | 会进入浏览器构建，只允许公开值  |
+| 类别       | 关键变量                                                                                                                             | 暴露范围                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| 运行       | `RUNTIME_MODE`、`API_HOST`、`API_PORT`、`WEB_ORIGIN`                                                                                 | API                             |
+| Supabase   | `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY`、`SUPABASE_DB_URL`                                                 | API；Secret/DB URL 禁止进入 Web |
+| Generation | `DEEPSEEK_API_KEY`、Base URL、模型、超时、成本费率                                                                                   | API                             |
+| Embedding  | `SILICONFLOW_API_KEY`、Base URL、模型、维度、超时                                                                                    | API                             |
+| Demo 安全  | 请求/Token 日额度、IP/Session 限流、上传与 Chunk 限制                                                                                | API                             |
+| Web        | `VITE_API_BASE_URL`、`VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY`、`VITE_GITHUB_URL`、`VITE_AUTHOR_NAME`、`VITE_CONTACT_URL` | 会进入浏览器构建，只允许公开值  |
 
 `SUPABASE_DB_URL` 是完整 PostgreSQL URI，不是数据库密码；密码中的 URL 保留字符要百分号编码。`VITE_SUPABASE_*` 复用同一 Project URL 与 Publishable Key，不是另一套凭据。
 

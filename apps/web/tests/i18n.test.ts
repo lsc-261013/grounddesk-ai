@@ -37,4 +37,14 @@ describe('locale persistence', () => {
       'Evidence below the confidence threshold',
     )
   })
+
+  it('renders the public author credit naturally in both locales', async () => {
+    const { i18n } = await import('../src/i18n')
+
+    i18n.global.locale.value = 'zh-CN'
+    expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe('由 Alex 独立设计与开发')
+
+    i18n.global.locale.value = 'en-US'
+    expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe('Designed and built by Alex')
+  })
 })

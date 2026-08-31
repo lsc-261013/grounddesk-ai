@@ -23,7 +23,8 @@ const { locale, t } = useI18n()
 const showcaseStore = useShowcaseStore()
 const featuredProducts = computed(() => showcaseStore.products.slice(0, 4))
 const evaluation = computed(() => showcaseStore.evaluation)
-const githubUrl = import.meta.env.VITE_GITHUB_URL
+const contactUrl = import.meta.env.VITE_CONTACT_URL?.trim()
+const githubUrl = import.meta.env.VITE_GITHUB_URL?.trim()
 
 const productName = (product: (typeof showcaseStore.products)[number]): string =>
   locale.value === 'zh-CN' ? product.nameZh : product.nameEn
@@ -221,7 +222,20 @@ onMounted(() => void showcaseStore.load())
         <p>{{ t('landing.cta.description') }}</p>
       </div>
       <div>
-        <RouterLink class="landing-button landing-button--primary" to="/demo">
+        <a
+          v-if="contactUrl"
+          class="landing-button landing-button--primary"
+          :href="contactUrl"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {{ t('landing.cta.contact') }}<ArrowRight :size="16" />
+        </a>
+        <RouterLink
+          class="landing-button"
+          :class="contactUrl ? 'landing-button--secondary' : 'landing-button--primary'"
+          to="/demo"
+        >
           {{ t('landing.cta.demo') }}<ArrowRight :size="16" />
         </RouterLink>
         <a

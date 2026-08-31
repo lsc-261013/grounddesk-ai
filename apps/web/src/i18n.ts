@@ -121,6 +121,7 @@ export const i18n = createI18n({
           title: '需要一套同样可验证的 AI 客服系统？',
           description:
             '可以基于你的资料、业务规则与现有工具，定制双语 RAG、受控 Agent 和人工接管流程。',
+          contact: '联系作者',
           demo: '先体验真实 Demo',
         },
       },
@@ -545,6 +546,7 @@ export const i18n = createI18n({
         },
       },
       footer: 'GroundDesk · Demo Workspace · 所有商品与订单均为模拟数据',
+      authorCredit: '由 {name} 独立设计与开发',
       locale: 'EN',
     },
     'en-US': {
@@ -656,6 +658,7 @@ export const i18n = createI18n({
           title: 'Need a similarly verifiable AI support system?',
           description:
             'I can adapt bilingual RAG, controlled agents, and human handoff to your content, business rules, and existing tools.',
+          contact: 'Contact the builder',
           demo: 'Try the live Demo first',
         },
       },
@@ -1102,6 +1105,7 @@ export const i18n = createI18n({
         },
       },
       footer: 'GroundDesk · Demo Workspace · All products and orders are simulated',
+      authorCredit: 'Designed and built by {name}',
       locale: '中',
     },
   },

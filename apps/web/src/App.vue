@@ -14,6 +14,9 @@ const accessRoute = computed(() => (authStore.isAuthenticated ? '/console' : '/l
 const accessLabel = computed(() =>
   authStore.isAuthenticated ? t('navigation.console') : t('navigation.signIn'),
 )
+const authorName = import.meta.env.VITE_AUTHOR_NAME?.trim()
+const authorUrl =
+  import.meta.env.VITE_CONTACT_URL?.trim() || import.meta.env.VITE_GITHUB_URL?.trim()
 
 const toggleLocale = (): void => {
   const nextLocale: Locale = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
@@ -41,6 +44,12 @@ const toggleLocale = (): void => {
 
     <RouterView />
 
-    <footer class="site-footer">{{ t('footer') }}</footer>
+    <footer class="site-footer">
+      <span>{{ t('footer') }}</span>
+      <a v-if="authorName && authorUrl" :href="authorUrl" target="_blank" rel="noreferrer">
+        {{ t('authorCredit', { name: authorName }) }}
+      </a>
+      <span v-else-if="authorName">{{ t('authorCredit', { name: authorName }) }}</span>
+    </footer>
   </div>
 </template>

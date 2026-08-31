@@ -19,6 +19,13 @@ test('landing page is bilingual, reduced-motion safe, and responsive', async ({ 
 
   await expect(page.getByRole('heading', { name: '每一次回答，都有依据。' })).toBeVisible()
   await expect(page.locator('.flow-document')).toHaveCSS('animation-name', 'none')
+  if (process.env.VITE_AUTHOR_NAME && process.env.VITE_CONTACT_URL) {
+    await expect(page.getByText(`由 ${process.env.VITE_AUTHOR_NAME} 独立设计与开发`)).toBeVisible()
+    await expect(page.getByRole('link', { name: '联系作者', exact: true })).toHaveAttribute(
+      'href',
+      process.env.VITE_CONTACT_URL,
+    )
+  }
   await page.getByRole('button', { name: 'EN', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Support answers you can verify.' })).toBeVisible()
   await expect

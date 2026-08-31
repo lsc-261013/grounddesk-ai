@@ -109,6 +109,8 @@ GET https://<render-host>/health
 | `VITE_SUPABASE_URL`             | Supabase Project URL                     |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable Key                 |
 | `VITE_GITHUB_URL`               | 最终公开仓库 URL；未配置时页面隐藏该入口 |
+| `VITE_AUTHOR_NAME`              | 落地页与页脚展示的公开作者名             |
+| `VITE_CONTACT_URL`              | 公开联系入口，例如作品集或职业邮箱链接   |
 
 `VITE_` 变量会进入前端构建产物，因此只能放公开值。任何 Secret Key、数据库连接串或模型 Key 都不得使用 `VITE_` 前缀。
 
