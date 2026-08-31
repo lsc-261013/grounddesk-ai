@@ -40,6 +40,7 @@ const apiEnvSchema = z
     DEMO_DAILY_REQUEST_LIMIT: z.coerce.number().int().positive().default(120),
     DEMO_DAILY_TOKEN_LIMIT: z.coerce.number().int().positive().default(250_000),
     PUBLIC_CHAT_RATE_LIMIT: z.coerce.number().int().positive().default(12),
+    PUBLIC_CHAT_SESSION_RATE_LIMIT: z.coerce.number().int().positive().default(10),
     PUBLIC_CHAT_RATE_WINDOW_MS: z.coerce.number().int().min(1_000).default(60_000),
     MAX_UPLOAD_BYTES: z.coerce
       .number()

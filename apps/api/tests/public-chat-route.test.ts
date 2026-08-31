@@ -52,15 +52,27 @@ class StreamingAgentService implements AgentService {
 
 const apps: Awaited<ReturnType<typeof buildApp>>[] = []
 
-const createApp = async () => {
+const createApp = async (environmentOverrides: NodeJS.ProcessEnv = {}) => {
   const dependencies: AgentDependencies = { agentService: new StreamingAgentService() }
   const app = await buildApp({
-    environment: parseApiEnv({ RUNTIME_MODE: 'offline', NODE_ENV: 'test' }),
+    environment: parseApiEnv({
+      RUNTIME_MODE: 'offline',
+      NODE_ENV: 'test',
+      ...environmentOverrides,
+    }),
     agentDependencies: dependencies,
     logger: false,
   })
   apps.push(app)
   return app
+}
+
+async function injectPublicChat(app: Awaited<ReturnType<typeof buildApp>>, sessionId: string) {
+  return app.inject({
+    method: 'POST',
+    url: '/v1/public/workspaces/avenlo-demo/chat/stream',
+    payload: { sessionId, message: 'What is the return window?', locale: 'en-US' },
+  })
 }
 
 afterEach(async () => {
@@ -182,5 +194,34 @@ describe('public chat SSE route', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({ accepted: true })
+  })
+
+  it('limits repeated requests from the same browser session independently of its IP', async () => {
+    const app = await createApp({
+      PUBLIC_CHAT_RATE_LIMIT: '10',
+      PUBLIC_CHAT_SESSION_RATE_LIMIT: '1',
+      PUBLIC_CHAT_RATE_WINDOW_MS: '60000',
+    })
+    const first = await injectPublicChat(app, '90000000-0000-4000-8000-000000000001')
+    const repeated = await injectPublicChat(app, '90000000-0000-4000-8000-000000000001')
+    const independent = await injectPublicChat(app, '90000000-0000-4000-8000-000000000002')
+
+    expect(first.statusCode).toBe(200)
+    expect(repeated.statusCode).toBe(429)
+    expect(repeated.json()).toMatchObject({ error: 'session_rate_limit_exceeded' })
+    expect(independent.statusCode).toBe(200)
+  })
+
+  it('retains the separate IP limit even when sessions rotate', async () => {
+    const app = await createApp({
+      PUBLIC_CHAT_RATE_LIMIT: '1',
+      PUBLIC_CHAT_SESSION_RATE_LIMIT: '10',
+      PUBLIC_CHAT_RATE_WINDOW_MS: '60000',
+    })
+    const first = await injectPublicChat(app, '90000000-0000-4000-8000-000000000001')
+    const rotated = await injectPublicChat(app, '90000000-0000-4000-8000-000000000002')
+
+    expect(first.statusCode).toBe(200)
+    expect(rotated.statusCode).toBe(429)
   })
 })

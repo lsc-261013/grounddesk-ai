@@ -42,4 +42,11 @@ export default tseslint.config(
       'vue/singleline-html-element-content-newline': 'off',
     },
   },
+  {
+    files: ['**/*.ts'],
+    rules: {
+      // Vue's component-count heuristic treats repeated `createApp()` test fixtures as components.
+      'vue/one-component-per-file': 'off',
+    },
+  },
 )

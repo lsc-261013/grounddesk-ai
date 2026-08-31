@@ -161,7 +161,7 @@ pnpm eval:report
 
 - 服务端 JWT Claims + Workspace 成员权限 + Repository 条件 + RLS 多层隔离；
 - 上传校验扩展名、MIME、签名、大小、空内容和文本编码，私有 Storage 不公开原文；
-- Public Chat 按 IP/Session 限流并设置每日请求与 Token 额度；
+- Public Chat 同时按 IP 和浏览器 Session 设置独立短时限流，并设置 Workspace 每日请求与 Token 总额度；
 - LLM/Embedding 有超时和有限重试，日志对授权头、Cookie、密码、Token 和 Secret 脱敏；
 - 工具只允许固定名称和 Zod 参数，数据库查询参数化，订单返回最小化且脱敏；
 - Webhook 使用事务型 Outbox、HMAC、AES-256-GCM、超时/重试和 SSRF/DNS Rebinding 防护；

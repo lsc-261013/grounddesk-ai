@@ -11,6 +11,7 @@ import {
 import type { AgentDependencies } from '../agent/dependencies.js'
 import { PublicChatError } from '../agent/errors.js'
 import type { ApiEnv } from '../config/env.js'
+import { createPublicSessionRateLimitGuard } from './public-session-rate-limit.js'
 
 const workspaceParamsSchema = z.object({
   workspaceSlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -21,6 +22,11 @@ export const registerPublicChatRoutes = (
   environment: ApiEnv,
   dependencies: AgentDependencies,
 ): void => {
+  const enforceSessionRateLimit = createPublicSessionRateLimitGuard(
+    environment.PUBLIC_CHAT_SESSION_RATE_LIMIT,
+    environment.PUBLIC_CHAT_RATE_WINDOW_MS,
+  )
+
   app.post(
     '/v1/public/workspaces/:workspaceSlug/chat/feedback',
     {
@@ -30,6 +36,7 @@ export const registerPublicChatRoutes = (
           timeWindow: environment.PUBLIC_CHAT_RATE_WINDOW_MS,
         },
       },
+      preHandler: enforceSessionRateLimit,
     },
     async (request) => {
       const { workspaceSlug } = workspaceParamsSchema.parse(request.params)
@@ -51,6 +58,7 @@ export const registerPublicChatRoutes = (
           timeWindow: environment.PUBLIC_CHAT_RATE_WINDOW_MS,
         },
       },
+      preHandler: enforceSessionRateLimit,
     },
     async (request, reply) => {
       const { workspaceSlug } = workspaceParamsSchema.parse(request.params)

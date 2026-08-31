@@ -257,6 +257,8 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 可以解释为什么 UI 断言关注用户可见的脱敏摘要而不是原始 Tool JSON、为什么真实 Provider 测试不应成为每次提交的硬依赖、如何用 Trace 定位刷新竞态，以及浏览器测试怎样补足 RLS、API 集成测试和纯函数单测之间的空白。
 
+安全矩阵复查时发现短时限流只有 Fastify 默认 IP 维度，Session 仅用于会话归属而没有独立速率窗口。现在保留 IP 限流，同时在请求体完成 Schema 解析后增加浏览器 Session 窗口；测试分别证明重复 Session 会被限制、轮换 Session 也不能绕过 IP 限制。Workspace 每日请求与 Token 总额度仍是最终成本上限。
+
 ## 里程碑 6 补充：商品主数据与可恢复 Demo
 
 ### 解决什么问题
