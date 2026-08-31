@@ -23,16 +23,16 @@
 
 ## 产品、视觉与质量
 
-| 验收域                             | 当前状态   | 权威证据                                                                           |
-| ---------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
-| 双语落地页、公开 Demo、核心控制台  | 本地已验证 | Vue I18n 持久化、语言单测、浏览器刷新 E2E                                          |
-| Hero 可信流程动画                  | 本地已验证 | `TrustFlowAnimation.vue`；视口触发、悬停暂停、离屏暂停、Reduced Motion E2E         |
-| 服务端事件驱动聊天轨迹             | 本地已验证 | SSE Stage/Token/Citation/Tool 事件；无写死等待；Live Demo E2E                      |
-| 1440、1280、768、390 响应式        | 本地已验证 | `visual-audit.spec.ts` 四视口无水平溢出；三张真实数据截图                          |
-| 键盘、焦点、Reduced Motion、对比度 | 本地已验证 | 可见 Focus 样式、语义控件、Reduced Motion 测试、Lighthouse Accessibility 95        |
-| 本地 production Lighthouse         | 本地已验证 | 桌面 94/95/96/91；移动 97/95/96/91（Performance/Accessibility/Best Practices/SEO） |
-| TypeScript、lint、测试、构建       | 本地已验证 | TypeScript strict；lint 零告警；Shared 3 + API 73 + Web 10；production build 通过  |
-| 真实确定性评测                     | 本地已验证 | Live Run `b2310ecb-6383-4259-9c3b-96bd3f1281c4`，26/26，无失败                     |
+| 验收域                             | 当前状态   | 权威证据                                                                                 |
+| ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
+| 双语落地页、公开 Demo、核心控制台  | 本地已验证 | Vue I18n 持久化、语言单测、浏览器刷新 E2E                                                |
+| Hero 可信流程动画                  | 本地已验证 | `TrustFlowAnimation.vue`；视口触发、悬停暂停、离屏暂停、Reduced Motion E2E               |
+| 服务端事件驱动聊天轨迹             | 本地已验证 | SSE Stage/Token/Citation/Tool 事件；无写死等待；Live Demo E2E                            |
+| 1440、1280、768、390 响应式        | 本地已验证 | `visual-audit.spec.ts` 四视口无水平溢出；三张真实数据截图                                |
+| 键盘、焦点、Reduced Motion、对比度 | 本地已验证 | 可见 Focus 样式、语义控件、Reduced Motion 测试、Lighthouse Accessibility 100             |
+| 本地 production Lighthouse         | 本地已验证 | 桌面 99/100/100/100；移动 97/100/100/100（Performance/Accessibility/Best Practices/SEO） |
+| TypeScript、lint、测试、构建       | 本地已验证 | TypeScript strict；lint 零告警；Shared 3 + API 73 + Web 10；production build 通过        |
+| 真实确定性评测                     | 本地已验证 | Live Run `b2310ecb-6383-4259-9c3b-96bd3f1281c4`，26/26，无失败                           |
 
 ## 文档与所有者交付
 

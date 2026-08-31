@@ -238,7 +238,7 @@ Supabase Auth 负责成熟的密码和 Token 生命周期，Fastify 负责业务
 
 一键 Demo Reset 的真实浏览器验收又发现两层只在完整路径出现的问题：前端先对无 Body 的 POST 错误声明 JSON，修复为仅在确有非 FormData Body 时设置 `Content-Type`；请求进入数据库后，`tickets.conversation_id` 的 `ON DELETE RESTRICT` 阻止先删会话。Reset 事务因此改为先删除工单（回复级联），再删除会话。每次失败都由事务完整回滚，没有留下半重置数据。
 
-视觉证据录制的首版截图虽然没有布局溢出，却把异步商品、评测和运营指标拍在 loading 阶段。修复不是添加固定等待时间，而是等待 4 件精选商品、8 件 Demo 商品、Live Evaluation 卡片和控制台骨架消失等真实 DOM 条件。最终脚本覆盖 1440×900、1280×800、768×1024 与 390×844；本地 production Lighthouse 桌面四项为 94/95/96/91，移动端为 97/95/96/91。
+视觉证据录制的首版截图虽然没有布局溢出，却把异步商品、评测和运营指标拍在 loading 阶段。修复不是添加固定等待时间，而是等待 4 件精选商品、8 件 Demo 商品、Live Evaluation 卡片和控制台骨架消失等真实 DOM 条件。最终脚本覆盖 1440×900、1280×800、768×1024 与 390×844。首轮 Lighthouse 又定位到小字号标签对比度、缺失 favicon/robots，以及审计 Origin 与 CORS 不一致三类真实问题；修复后本地 production 桌面四项为 99/100/100/100，移动端为 97/100/100/100。
 
 ### 如何手动验证
 

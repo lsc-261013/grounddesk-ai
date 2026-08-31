@@ -126,7 +126,7 @@ pnpm test:e2e
 
 `pnpm validate` 依次执行 TypeScript、ESLint、单元/集成测试和生产构建。默认 E2E 不依赖外部模型；需要验证真实公开 Demo 时，在本地设置 `E2E_LIVE_AI=true` 后单独运行 live public demo 用例，该用例会产生少量 DeepSeek 与 SiliconFlow 用量。
 
-2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 94 / Accessibility 95 / Best Practices 96 / SEO 91；移动端为 97 / 95 / 96 / 91。公开部署后必须从无痕环境重跑，不能把本地网络结果直接当作线上成绩。
+2026-08-31 本地 production build 的 Lighthouse 13 结果：桌面端 Performance 99 / Accessibility 100 / Best Practices 100 / SEO 100；移动端为 97 / 100 / 100 / 100。公开部署后必须从无痕环境重跑，不能把本地网络结果直接当作线上成绩。
 
 真实服务专项检查：
 
