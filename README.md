@@ -11,6 +11,12 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 - 访客无需 API Key，可直接体验知识引用、订单查询和人工接管；
 - GitHub：[lsc-261013/grounddesk-ai](https://github.com/lsc-261013/grounddesk-ai)。
 
+演示账号是公开测试资料，不用于真实业务：
+
+- 管理员：`admin@demo.grounddesk.app`
+- 客服：`agent@demo.grounddesk.app`
+- 公共 Demo 密码：`GroundDesk!Demo2026`
+
 ## 核心价值
 
 - **有依据：** PDF、Markdown、TXT 经真实 Embedding 与混合检索进入证据链，事实回答带文档、章节/页码与原文引用；
@@ -19,23 +25,16 @@ GroundDesk 是一个面向电商、SaaS 与教育等场景的双语可信 AI 客
 - **可运营：** 管理员管理知识、商品、订单、成员、Webhook 和评测，客服处理分配工单；
 - **可验证：** 每次问答记录检索、引用、工具、延迟、Token、成本、反馈与错误，指标来自数据库真实记录。
 
-## 当前状态
+## 已实现与验证
 
-里程碑 1 已完成：工程骨架、数据库 Schema、迁移、Demo Seed 与环境校验。迁移已在真实 Supabase 项目执行，重复运行会根据版本和 SHA-256 校验和安全跳过；Seed 重跑后仍保持 8 个商品和 30 个订单。
-
-里程碑 2 已完成：Supabase Auth 真实密码登录、服务端 JWT Claims 校验、管理员/客服角色权限和 Workspace 双重隔离。管理员、客服与跨 Workspace 场景均已通过真实 Supabase Smoke Test；Demo 账号是明确标注、可重置的模拟账号。
-
-里程碑 3 已完成：管理员可上传 PDF、Markdown 和 TXT，系统会执行私有存储、内容去重、页码/章节感知切块、真实 SiliconFlow BGE-M3 Embedding 与 Supabase pgvector + PostgreSQL 全文混合检索。当前真实 Demo 数据包含 4 份双语文档和 26 个 Chunk；三条核心检索 Smoke Case 均命中预期来源。该小样本结果不作为最终评测准确率。
-
-里程碑 4 已完成：DeepSeek 单 Agent 会在四种受控意图中路由，服务端通过真实 SSE 发送处理阶段和回答 Token。知识回答经过相似度阈值、冲突与引用完整性校验；订单工具验证订单号与邮箱并返回脱敏只读结果；退货资格由版本化确定性规则计算。真实 Smoke Test 已通过知识引用、订单工具、退货规则和无答案人工接管四条链路。
-
-里程碑 5 已完成：站内工单支持分配、回复与状态流转；Webhook 使用事务型 Outbox、HMAC、超时、重试和 SSRF 防护；26 条双语确定性评测覆盖知识、订单、退货、无答案、提示注入与跨 Workspace 隔离，最新真实运行 26/26 通过。
-
-里程碑 6 的核心浏览器验收已完成：Playwright 覆盖双语持久化、reduced motion、390px 响应式、管理员保护页刷新、客服角色边界，以及真实订单 Tool Call 和无答案人工接管链路。
-
-里程碑 7 的公开部署验收已完成：Render Static Site 与 Free API 均为 Live，`/health` 返回 connected 且三个 Provider 均已配置；同一套 Playwright 用例已直接对公网 Origin 验证登录、权限、引用、工具、拒答、工单闭环和四档响应式。Free API 仍会休眠，投递简历前需要升级为常驻实例。
-
-管理员商品目录现已连接真实数据库，支持双语主数据、结构化规格、价格、退货属性与公开状态的创建和编辑；商品采用归档而非删除以保留历史订单引用，客服无法修改。Demo Reset 会恢复 8 件基准商品。
+| 领域         | 当前实现与验证证据                                                                                                                                             |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 数据与身份   | 真实 Supabase PostgreSQL、Auth、Private Storage 和 pgvector；管理员、客服及跨 Workspace 权限均通过真实 Smoke Test，26 张业务表启用 RLS。                       |
+| 知识库与 RAG | PDF、Markdown、TXT 上传后执行 Hash 去重、结构化切块和真实 BGE-M3 Embedding；使用向量与 PostgreSQL 全文检索融合，回答前执行证据阈值、冲突和引用完整性校验。     |
+| Agent 与工具 | DeepSeek 单 Agent 只允许知识问答、订单查询、退货资格和人工接管四种意图；订单工具只读且验证邮箱，退货资格由版本化确定性规则计算。                               |
+| 运营闭环     | 提供会话、商品、订单、知识文档、人工工单、Webhook Outbox、用量与质量看板；Demo Reset 可恢复 8 件商品和 30 个模拟订单。                                         |
+| 评测与安全   | 26 条双语确定性用例覆盖引用、检索、工具、拒答、提示注入和 Workspace 隔离；公开聊天具备限流、日额度、日志脱敏和 Prompt Injection 防护。                         |
+| 交付质量     | TypeScript strict、Vitest/Fastify 集成测试、Playwright E2E、四档响应式和 reduced motion 已验证；Render、Supabase、DeepSeek 与 SiliconFlow 公开链路可真实运行。 |
 
 ## 本地启动
 
@@ -190,21 +189,17 @@ pnpm eval:report
 
 ## 项目截图
 
-以下截图来自公开 Render 环境、真实 Supabase 数据库与最新 Live Evaluation，不是静态设计稿。自动化视觉验收覆盖 1440×900、1280×800、768×1024 和 390×844，并检查每个尺寸没有水平溢出。
+首页和公开 Demo 截图来自生产构建验收，控制台截图来自公开 Render 环境与真实 Supabase 数据。它们不是静态设计稿；自动化视觉验收覆盖 1440×900、1280×800、768×1024 和 390×844，并检查每个尺寸没有水平溢出。
 
-![GroundDesk 深色落地页](docs/images/landing-desktop.png)
+![GroundDesk 深色可信 AI 客服首页](docs/images/redesign-home-1440x900.png)
+
+![GroundDesk 公开 Demo 的实时回答与引用](docs/images/redesign-demo-answer-1440x900.png)
 
 ![GroundDesk 精密浅色控制台](docs/images/console-desktop.png)
 
 <p align="center">
-  <img src="docs/images/demo-mobile.png" width="390" alt="GroundDesk 390×844 移动端公开 Demo 与客服组件" />
+  <img src="docs/images/redesign-home-390x844.png" width="390" alt="GroundDesk 390×844 移动端首页" />
 </p>
-
-演示账号是公开测试资料，不用于真实业务：
-
-- 管理员：`admin@demo.grounddesk.app`
-- 客服：`agent@demo.grounddesk.app`
-- 公共 Demo 密码：`GroundDesk!Demo2026`
 
 ## Monorepo
 
@@ -233,3 +228,7 @@ scripts              本地验证和维护脚本
 - [所有者复现清单](docs/owner-checklist.md)
 - [英文自由职业服务包](docs/freelance-package.md)
 - [持续学习笔记](docs/learning-notes.md)
+
+## 开源许可
+
+本项目基于 [MIT License](LICENSE) 开源。你可以学习、使用、修改和分发代码，但需要保留原始版权与许可证声明。
