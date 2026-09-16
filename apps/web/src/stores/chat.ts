@@ -162,7 +162,7 @@ export const useChatStore = defineStore('chat', () => {
       handedOff: false,
       feedback: null,
     })
-    const assistant: ChatMessageView = {
+    messages.value.push({
       id: crypto.randomUUID(),
       role: 'assistant',
       content: '',
@@ -173,8 +173,11 @@ export const useChatStore = defineStore('chat', () => {
       refused: false,
       handedOff: false,
       feedback: null,
+    })
+    const assistant = messages.value.at(-1)
+    if (!assistant || assistant.role !== 'assistant') {
+      throw new Error('The assistant response could not be initialized.')
     }
-    messages.value.push(assistant)
 
     try {
       const isWorkspace = channel.startsWith('workspace:')

@@ -2,45 +2,27 @@
 import {
   ArrowRight,
   BookOpenCheck,
-  Boxes,
   Check,
   Database,
   GitBranch,
   LockKeyhole,
   MessageSquareText,
   ShieldCheck,
-  ShoppingBag,
   TicketCheck,
-  Wrench,
 } from 'lucide-vue-next'
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import TrustFlowAnimation from '../components/TrustFlowAnimation.vue'
+import SupportPreview from '../components/SupportPreview.vue'
 import { useShowcaseStore } from '../stores/showcase'
 
 const { locale, t } = useI18n()
 const showcaseStore = useShowcaseStore()
-const featuredProducts = computed(() => showcaseStore.products.slice(0, 4))
 const evaluation = computed(() => showcaseStore.evaluation)
 const contactUrl = import.meta.env.VITE_CONTACT_URL?.trim()
 const githubUrl = import.meta.env.VITE_GITHUB_URL?.trim()
 
-const productName = (product: (typeof showcaseStore.products)[number]): string =>
-  locale.value === 'zh-CN' ? product.nameZh : product.nameEn
-const productVisualId = (model: string): string =>
-  ({
-    'Airwave S1': 'airwave-s1',
-    'Airwave S1 Pro': 'airwave-s1-pro',
-    'Orbit H5': 'orbit-h5',
-    'Flux 67': 'flux-67',
-    'Flux 100': 'flux-100',
-    'LinkCore C240': 'linkcore-c240',
-    'Reserve 10K': 'reserve-10k',
-    'Dockline 6': 'dockline-6',
-  })[model] ?? 'airwave-s1'
-
-onMounted(() => void showcaseStore.load())
+onMounted(() => void showcaseStore.loadEvaluation())
 </script>
 
 <template>
@@ -52,102 +34,82 @@ onMounted(() => void showcaseStore.load())
         <p class="landing-hero__lead">{{ t('landing.hero.description') }}</p>
         <div class="landing-actions">
           <RouterLink class="landing-button landing-button--primary" to="/demo">
-            {{ t('landing.hero.primaryCta') }}<ArrowRight :size="16" />
+            {{ t('landing.hero.primaryCta') }}<ArrowRight :size="17" />
           </RouterLink>
-          <a class="landing-button landing-button--secondary" href="#evaluation">
+          <a class="landing-button landing-button--secondary" href="#project-notes">
             {{ t('landing.hero.secondaryCta') }}
           </a>
         </div>
         <ul class="landing-proof-list">
-          <li><BookOpenCheck :size="15" />{{ t('landing.hero.proofCitation') }}</li>
-          <li><Wrench :size="15" />{{ t('landing.hero.proofTool') }}</li>
-          <li><TicketCheck :size="15" />{{ t('landing.hero.proofHandoff') }}</li>
+          <li><BookOpenCheck :size="16" />{{ t('landing.hero.proofCitation') }}</li>
+          <li><ShieldCheck :size="16" />{{ t('landing.hero.proofBoundary') }}</li>
+          <li><TicketCheck :size="16" />{{ t('landing.hero.proofHandoff') }}</li>
         </ul>
       </div>
-      <TrustFlowAnimation />
+      <SupportPreview />
     </section>
 
-    <section class="landing-trust-strip" aria-label="GroundDesk boundaries">
-      <div>
-        <span>01</span><strong>{{ t('landing.strip.grounded') }}</strong>
-      </div>
-      <div>
-        <span>02</span><strong>{{ t('landing.strip.deterministic') }}</strong>
-      </div>
-      <div>
-        <span>03</span><strong>{{ t('landing.strip.handoff') }}</strong>
-      </div>
-      <div>
-        <span>04</span><strong>{{ t('landing.strip.isolated') }}</strong>
-      </div>
-    </section>
+    <section class="landing-workbench" aria-labelledby="scenario-title">
+      <div class="landing-workbench__inner">
+        <header class="landing-section__heading landing-section__heading--dark">
+          <div>
+            <p class="landing-eyebrow landing-eyebrow--dark">
+              <span></span>{{ t('landing.scenarios.eyebrow') }}
+            </p>
+            <h2 id="scenario-title">{{ t('landing.scenarios.title') }}</h2>
+          </div>
+          <p>{{ t('landing.scenarios.description') }}</p>
+        </header>
 
-    <section class="landing-section landing-product-story">
-      <header class="landing-section__heading">
-        <div>
-          <p class="landing-eyebrow"><span></span>AVENLO · DEMO WORKSPACE</p>
-          <h2>{{ t('landing.demo.title') }}</h2>
-        </div>
-        <p>{{ t('landing.demo.description') }}</p>
-      </header>
-      <div class="landing-product-grid" :aria-busy="showcaseStore.isLoading">
-        <template v-if="featuredProducts.length > 0">
-          <article v-for="product in featuredProducts" :key="product.id">
-            <span>{{ product.category }}</span>
-            <svg viewBox="0 0 320 240" role="img" :aria-label="productName(product)">
-              <use :href="`/products.svg#${productVisualId(product.model)}`" />
-            </svg>
-            <h3>{{ productName(product) }}</h3>
-            <small>{{ product.model }} · {{ product.sku }}</small>
+        <div class="landing-scenario-grid">
+          <article>
+            <span class="landing-scenario-grid__icon"><BookOpenCheck :size="20" /></span>
+            <small>01 · {{ t('landing.scenarios.groundedLabel') }}</small>
+            <h3>{{ t('landing.scenarios.groundedTitle') }}</h3>
+            <p>{{ t('landing.scenarios.groundedDescription') }}</p>
+            <strong><Check :size="15" />{{ t('landing.scenarios.groundedResult') }}</strong>
           </article>
-        </template>
-        <template v-else>
-          <article
-            v-for="placeholderIndex in 4"
-            :key="`product-placeholder-${placeholderIndex}`"
-            class="landing-product-placeholder"
-            aria-hidden="true"
-          >
-            <span>&nbsp;</span>
-            <svg viewBox="0 0 320 240" />
-            <h3>&nbsp;</h3>
-            <small>&nbsp;</small>
+          <article>
+            <span class="landing-scenario-grid__icon"><MessageSquareText :size="20" /></span>
+            <small>02 · {{ t('landing.scenarios.unknownLabel') }}</small>
+            <h3>{{ t('landing.scenarios.unknownTitle') }}</h3>
+            <p>{{ t('landing.scenarios.unknownDescription') }}</p>
+            <strong><Check :size="15" />{{ t('landing.scenarios.unknownResult') }}</strong>
           </article>
-        </template>
-        <div v-if="showcaseStore.error" class="landing-product-loading" role="alert">
-          {{ t('landing.demo.loadError') }}
+          <article>
+            <span class="landing-scenario-grid__icon is-warm"><TicketCheck :size="20" /></span>
+            <small>03 · {{ t('landing.scenarios.handoffLabel') }}</small>
+            <h3>{{ t('landing.scenarios.handoffTitle') }}</h3>
+            <p>{{ t('landing.scenarios.handoffDescription') }}</p>
+            <strong class="is-warm"
+              ><Check :size="15" />{{ t('landing.scenarios.handoffResult') }}</strong
+            >
+          </article>
         </div>
-        <div
-          v-else-if="showcaseStore.isLoading || featuredProducts.length === 0"
-          class="landing-product-loading"
-          role="status"
-        >
-          {{ t('landing.demo.loading') }}
+
+        <div class="landing-demo-bridge">
+          <div>
+            <span>AVENLO · DEMO WORKSPACE</span>
+            <strong>{{ t('landing.demo.title') }}</strong>
+            <p>{{ t('landing.demo.description') }}</p>
+          </div>
+          <RouterLink class="landing-button landing-button--ink" to="/demo">
+            {{ t('landing.demo.openDemo') }}<ArrowRight :size="17" />
+          </RouterLink>
         </div>
-      </div>
-      <div class="landing-demo-callout">
-        <div>
-          <ShoppingBag :size="18" />
-          <span>
-            <strong>{{ t('landing.demo.calloutTitle') }}</strong>
-            <small>{{ t('landing.demo.calloutDescription') }}</small>
-          </span>
-        </div>
-        <RouterLink to="/demo">
-          {{ t('landing.demo.openDemo') }}<ArrowRight :size="15" />
-        </RouterLink>
       </div>
     </section>
 
-    <section id="evaluation" class="landing-section landing-evaluation">
+    <section id="project-notes" class="landing-section landing-evaluation">
       <div class="landing-evaluation__copy">
         <p class="landing-eyebrow"><span></span>{{ t('landing.evaluation.eyebrow') }}</p>
         <h2>{{ t('landing.evaluation.title') }}</h2>
         <p>{{ t('landing.evaluation.description') }}</p>
-        <small v-if="evaluation"
-          >{{ t('landing.evaluation.lastRun') }} ·
-          {{ new Date(evaluation.completedAt).toLocaleDateString(locale) }}</small
-        >
+        <small v-if="evaluation">
+          {{ t('landing.evaluation.lastRun') }} ·
+          {{ new Date(evaluation.completedAt).toLocaleDateString(locale) }} ·
+          {{ t('landing.evaluation.sampleNote', { count: evaluation.metrics.total }) }}
+        </small>
         <small v-else>{{ t('landing.evaluation.unavailable') }}</small>
       </div>
       <div v-if="evaluation" class="landing-evaluation__score">
@@ -157,12 +119,12 @@ onMounted(() => void showcaseStore.load())
         </div>
         <dl>
           <div>
-            <dt>Retrieval@5</dt>
-            <dd>{{ Math.round((evaluation.metrics.retrievalAt5 ?? 0) * 100) }}%</dd>
-          </div>
-          <div>
             <dt>{{ t('landing.evaluation.citations') }}</dt>
             <dd>{{ Math.round((evaluation.metrics.citationCoverage ?? 0) * 100) }}%</dd>
+          </div>
+          <div>
+            <dt>{{ t('landing.evaluation.refusal') }}</dt>
+            <dd>{{ Math.round((evaluation.metrics.refusalHandoffRate ?? 0) * 100) }}%</dd>
           </div>
           <div>
             <dt>{{ t('landing.evaluation.tools') }}</dt>
@@ -174,67 +136,46 @@ onMounted(() => void showcaseStore.load())
           </div>
         </dl>
       </div>
-      <div v-else class="landing-evaluation__empty">{{ t('landing.evaluation.noResult') }}</div>
+      <div v-else class="landing-evaluation__empty">
+        <strong>{{ t('landing.evaluation.noResult') }}</strong>
+        <p v-if="showcaseStore.evaluationError">{{ t('landing.evaluation.retryLater') }}</p>
+      </div>
     </section>
 
     <section id="architecture" class="landing-section landing-architecture">
       <header class="landing-section__heading">
         <div>
-          <p class="landing-eyebrow"><span></span>EXPLICIT SYSTEM BOUNDARIES</p>
+          <p class="landing-eyebrow"><span></span>{{ t('landing.architecture.eyebrow') }}</p>
           <h2>{{ t('landing.architecture.title') }}</h2>
         </div>
         <p>{{ t('landing.architecture.description') }}</p>
       </header>
       <div class="architecture-track">
         <article>
-          <MessageSquareText :size="19" /><span>Vue 3</span
-          ><strong>{{ t('landing.architecture.interface') }}</strong>
+          <MessageSquareText :size="20" /><span>Vue 3</span>
+          <strong>{{ t('landing.architecture.interface') }}</strong>
         </article>
-        <i><ArrowRight :size="15" /></i>
+        <i><ArrowRight :size="16" /></i>
         <article>
-          <GitBranch :size="19" /><span>Fastify</span
-          ><strong>{{ t('landing.architecture.agent') }}</strong>
+          <GitBranch :size="20" /><span>Fastify</span>
+          <strong>{{ t('landing.architecture.agent') }}</strong>
         </article>
-        <i><ArrowRight :size="15" /></i>
+        <i><ArrowRight :size="16" /></i>
         <article>
-          <Database :size="19" /><span>PostgreSQL</span
-          ><strong>{{ t('landing.architecture.retrieval') }}</strong>
+          <Database :size="20" /><span>PostgreSQL</span>
+          <strong>{{ t('landing.architecture.retrieval') }}</strong>
         </article>
-        <i><ArrowRight :size="15" /></i>
+        <i><ArrowRight :size="16" /></i>
         <article>
-          <LockKeyhole :size="19" /><span>RLS + HMAC</span
-          ><strong>{{ t('landing.architecture.safety') }}</strong>
+          <LockKeyhole :size="20" /><span>RLS + HMAC</span>
+          <strong>{{ t('landing.architecture.safety') }}</strong>
         </article>
       </div>
       <ul class="architecture-notes">
-        <li><Check :size="14" />{{ t('landing.architecture.noteOne') }}</li>
-        <li><Check :size="14" />{{ t('landing.architecture.noteTwo') }}</li>
-        <li><Check :size="14" />{{ t('landing.architecture.noteThree') }}</li>
+        <li><Check :size="15" />{{ t('landing.architecture.noteOne') }}</li>
+        <li><Check :size="15" />{{ t('landing.architecture.noteTwo') }}</li>
+        <li><Check :size="15" />{{ t('landing.architecture.noteThree') }}</li>
       </ul>
-    </section>
-
-    <section class="landing-section landing-use-cases">
-      <div>
-        <p class="landing-eyebrow"><span></span>{{ t('landing.useCases.eyebrow') }}</p>
-        <h2>{{ t('landing.useCases.title') }}</h2>
-      </div>
-      <div class="use-case-list">
-        <article>
-          <span>01</span><Boxes :size="18" />
-          <h3>{{ t('landing.useCases.commerce') }}</h3>
-          <p>{{ t('landing.useCases.commerceDescription') }}</p>
-        </article>
-        <article>
-          <span>02</span><ShieldCheck :size="18" />
-          <h3>{{ t('landing.useCases.software') }}</h3>
-          <p>{{ t('landing.useCases.softwareDescription') }}</p>
-        </article>
-        <article>
-          <span>03</span><BookOpenCheck :size="18" />
-          <h3>{{ t('landing.useCases.education') }}</h3>
-          <p>{{ t('landing.useCases.educationDescription') }}</p>
-        </article>
-      </div>
     </section>
 
     <section class="landing-cta">
@@ -244,21 +185,8 @@ onMounted(() => void showcaseStore.load())
         <p>{{ t('landing.cta.description') }}</p>
       </div>
       <div>
-        <a
-          v-if="contactUrl"
-          class="landing-button landing-button--primary"
-          :href="contactUrl"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {{ t('landing.cta.contact') }}<ArrowRight :size="16" />
-        </a>
-        <RouterLink
-          class="landing-button"
-          :class="contactUrl ? 'landing-button--secondary' : 'landing-button--primary'"
-          to="/demo"
-        >
-          {{ t('landing.cta.demo') }}<ArrowRight :size="16" />
+        <RouterLink class="landing-button landing-button--primary" to="/demo">
+          {{ t('landing.cta.demo') }}<ArrowRight :size="17" />
         </RouterLink>
         <a
           v-if="githubUrl"
@@ -266,8 +194,18 @@ onMounted(() => void showcaseStore.load())
           :href="githubUrl"
           target="_blank"
           rel="noreferrer"
-          >GitHub</a
         >
+          GitHub
+        </a>
+        <a
+          v-if="contactUrl && contactUrl !== githubUrl"
+          class="landing-button landing-button--secondary"
+          :href="contactUrl"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {{ t('landing.cta.contact') }}
+        </a>
       </div>
     </section>
   </main>

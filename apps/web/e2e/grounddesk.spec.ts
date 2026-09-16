@@ -17,17 +17,22 @@ test('landing page is bilingual, reduced-motion safe, and responsive', async ({ 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: '每一次回答，都有依据。' })).toBeVisible()
-  await expect(page.locator('.flow-document')).toHaveCSS('animation-name', 'none')
+  await expect(
+    page.getByRole('heading', { name: '让客服回答有依据，让复杂问题有人接手。' }),
+  ).toBeVisible()
+  await expect(page.getByText('界面示例 · 不是实时生成', { exact: true })).toBeVisible()
+  await expect(page.locator('.landing-scenario-grid article')).toHaveCount(3)
   if (process.env.VITE_AUTHOR_NAME && process.env.VITE_CONTACT_URL) {
-    await expect(page.getByText(`由 ${process.env.VITE_AUTHOR_NAME} 独立设计与开发`)).toBeVisible()
+    await expect(page.getByText(`个人作品 · ${process.env.VITE_AUTHOR_NAME}`)).toBeVisible()
     await expect(page.getByRole('link', { name: '联系作者', exact: true })).toHaveAttribute(
       'href',
       process.env.VITE_CONTACT_URL,
     )
   }
   await page.getByRole('button', { name: 'EN', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Support answers you can verify.' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Grounded answers. Human help when it matters.' }),
+  ).toBeVisible()
   await expect
     .poll(() => page.evaluate(() => window.localStorage.getItem('grounddesk-locale')))
     .toBe('en-US')
@@ -99,12 +104,8 @@ test('live demo cites knowledge, calls tools, and completes human handoff', asyn
   test.setTimeout(180_000)
 
   await page.goto('/demo')
-  await page
-    .getByRole('button', {
-      name: '查询订单 GD-2026D019，下单邮箱是 demo.customer19@example.com。',
-      exact: true,
-    })
-    .click()
+  await page.getByRole('button', { name: '填入订单查询', exact: true }).click()
+  await page.getByRole('button', { name: '发送问题', exact: true }).click()
   await expect(page.locator('.demo-tool')).toContainText('订单凭据已由服务端校验', {
     timeout: 45_000,
   })
@@ -113,9 +114,8 @@ test('live demo cites knowledge, calls tools, and completes human handoff', asyn
   )
 
   await page.getByRole('button', { name: '新建会话', exact: true }).click()
-  await page
-    .getByRole('button', { name: '你们是否为火星殖民地提供维修服务？', exact: true })
-    .click()
+  await page.getByRole('button', { name: /资料不足怎么办/ }).click()
+  await page.getByRole('button', { name: '发送问题', exact: true }).click()
   const handoff = page.locator('.demo-message[data-role="assistant"][data-handoff="true"]')
   await expect(handoff).toContainText('资料不足', { timeout: 45_000 })
 

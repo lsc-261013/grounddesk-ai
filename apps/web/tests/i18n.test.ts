@@ -50,10 +50,12 @@ describe('locale persistence', () => {
     const { i18n } = await import('../src/i18n')
 
     i18n.global.locale.value = 'zh-CN'
-    expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe('由 Alex 独立设计与开发')
+    expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe('个人作品 · Alex')
 
     i18n.global.locale.value = 'en-US'
-    expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe('Designed and built by Alex')
+    expect(i18n.global.t('authorCredit', { name: 'Alex' })).toBe(
+      'Personal portfolio project · Alex',
+    )
   })
 
   it('keeps every interface message key available in both locales', async () => {
