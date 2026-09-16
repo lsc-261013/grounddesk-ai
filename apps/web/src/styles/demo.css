@@ -356,6 +356,10 @@
   color: #a45d35;
 }
 
+.demo-message__meta b.is-error {
+  color: #a84f22;
+}
+
 .demo-message__content {
   margin: 0;
   color: #313b36;

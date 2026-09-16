@@ -187,6 +187,7 @@ export const i18n = createI18n({
           processing: '正在处理当前问题',
           generating: '正在生成回答…',
           handedOff: '已转人工处理',
+          failed: '请求失败',
           errorTitle: '这次请求没有完成',
           welcome: '你好，我是 Avenlo 客服助手。',
           welcomeDescription: '我会引用产品与政策资料，也可以用订单号和匹配邮箱查询模拟订单。',
@@ -808,6 +809,7 @@ export const i18n = createI18n({
           processing: 'Processing the current question',
           generating: 'Generating an answer…',
           handedOff: 'Handed off for human review',
+          failed: 'Request failed',
           errorTitle: 'This request did not complete',
           welcome: 'Hi, I am the Avenlo support assistant.',
           welcomeDescription:

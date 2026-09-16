@@ -35,11 +35,14 @@ const { t } = useI18n()
     :data-role="message.role"
     :data-handoff="message.handedOff"
   >
-    <header class="demo-message__meta">
-      <span>{{ message.role === 'user' ? t('playground.you') : 'GroundDesk AI' }}</span>
+    <header v-if="message.role === 'assistant'" class="demo-message__meta">
+      <span>GroundDesk AI</span>
       <b v-if="message.streaming">{{ t('demo.chat.generating') }}</b>
       <b v-else-if="message.handedOff" class="is-handoff">
         <TicketCheck :size="13" />{{ t('demo.chat.handedOff') }}
+      </b>
+      <b v-else-if="message.failed" class="is-error">
+        <ShieldAlert :size="13" />{{ t('demo.chat.failed') }}
       </b>
     </header>
 
@@ -88,7 +91,10 @@ const { t } = useI18n()
       </div>
     </details>
 
-    <div v-if="message.role === 'assistant' && !message.streaming" class="answer-feedback">
+    <div
+      v-if="message.role === 'assistant' && !message.streaming && !message.failed"
+      class="answer-feedback"
+    >
       <span>{{ t('playground.feedbackQuestion') }}</span>
       <button
         type="button"

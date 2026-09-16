@@ -38,7 +38,26 @@ export interface ChatMessageView {
   streaming: boolean
   refused: boolean
   handedOff: boolean
+  failed: boolean
   feedback: FeedbackRating | null
+}
+
+const requestFailureCopy = (locale: Locale): string =>
+  locale === 'zh-CN'
+    ? '暂时无法连接问答服务，请稍后重试。'
+    : 'The support service could not be reached. Please try again shortly.'
+
+const requestFailureDetail = (cause: unknown, locale: Locale): string => {
+  if (cause instanceof TypeError && /fetch/i.test(cause.message)) {
+    return locale === 'zh-CN'
+      ? '无法连接问答服务，请检查 API 地址、服务状态或跨域配置。'
+      : 'The support service is unreachable. Check the API URL, service status, or CORS configuration.'
+  }
+  return cause instanceof Error
+    ? cause.message
+    : locale === 'zh-CN'
+      ? '问答请求失败。'
+      : 'The chat request failed.'
 }
 
 const getSessionId = (): string => {
@@ -125,6 +144,7 @@ export const useChatStore = defineStore('chat', () => {
       message.id = streamEvent.messageId
       message.refused = streamEvent.refused
       message.handedOff = streamEvent.handedOff
+      message.failed = false
       message.streaming = false
       return
     }
@@ -160,6 +180,7 @@ export const useChatStore = defineStore('chat', () => {
       streaming: false,
       refused: false,
       handedOff: false,
+      failed: false,
       feedback: null,
     })
     messages.value.push({
@@ -172,6 +193,7 @@ export const useChatStore = defineStore('chat', () => {
       streaming: true,
       refused: false,
       handedOff: false,
+      failed: false,
       feedback: null,
     })
     const assistant = messages.value.at(-1)
@@ -222,7 +244,9 @@ export const useChatStore = defineStore('chat', () => {
         applyEvent(assistant, chatStreamEventSchema.parse(payload))
       }
     } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : 'The chat request failed.'
+      error.value = requestFailureDetail(cause, locale)
+      if (!assistant.content) assistant.content = requestFailureCopy(locale)
+      assistant.failed = true
       assistant.streaming = false
     } finally {
       isStreaming.value = false

@@ -105,3 +105,27 @@
 - 待办：项目所有者查看本地预览和截图，决定是否接受、继续微调或另行安排后端故障修复。
 - 阻塞：线上公开数据端点 HTTP 500 属于后端/服务范围，本轮按边界只记录不修改。
 - 下一步：停止扩展；不合并、不推送、不部署。
+
+## 阶段 6：验收反馈修复
+
+- 状态：前端修复完成；真实数据与问答仍被 Supabase 服务状态阻塞。
+- 已改文件：
+  - `apps/web/src/components/DemoChatMessage.vue`（移除访客消息中重复的“你”标签；增加明确失败状态）。
+  - `apps/web/src/stores/chat.ts`（网络失败时结束占位状态并显示双语可恢复提示）。
+  - `apps/web/src/i18n.ts`、`apps/web/src/styles/demo.css`（失败状态文案与视觉反馈）。
+  - `apps/web/tests/demo-chat-message.test.ts`、`apps/web/tests/chat.test.ts`（访客标签和网络失败回归）。
+- 验证结果：
+  - Web TypeScript 类型检查通过。
+  - 全仓 ESLint 通过。
+  - Web 测试通过：7 个测试文件、16 项测试。
+  - Web production build 通过。
+  - 当前本地 `.env` 未配置 `VITE_API_BASE_URL`，4173 预览会回退请求 `http://localhost:8787`。
+  - 部署 API 的 CORS 仅允许 `https://grounddesk-ai-lsc.onrender.com`，不允许本地 `http://127.0.0.1:4173`。
+  - 正式商品接口在正式站点 Origin 下仍返回 HTTP 500；聊天预检 CORS 正常。
+  - `pnpm db:verify` 返回 `tenant/user postgres.lxerwevpyucbdgvhnrcr not found`；对应 Supabase 项目域名也无法解析。连接串项目引用与 `SUPABASE_URL` 一致，因此当前证据指向 Supabase 项目暂停、删除或连接信息失效，而非页面请求代码。
+- 待办：
+  - 项目所有者在 Supabase Dashboard 确认项目是否处于 Paused/Inactive、是否已被删除，以及当前 Project URL/连接串是否仍为 `lxerwevpyucbdgvhnrcr`。
+  - Supabase 恢复后重新运行 `pnpm db:verify`，再验证公开商品接口和一次真实问答。
+  - 需要本地连接线上 API 时，另行选择正式允许的预览域名或配置受控的本地 CORS；本轮不修改部署边界。
+- 阻塞：Supabase 项目端点无法解析，数据库连接池报告租户不存在。
+- 下一步：等待项目所有者确认 Supabase 项目状态；在此之前不把商品、问答和引用标记为通过。
