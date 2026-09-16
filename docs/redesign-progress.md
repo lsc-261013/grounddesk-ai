@@ -108,7 +108,7 @@
 
 ## 阶段 6：验收反馈修复
 
-- 状态：前端修复完成；真实数据与问答仍被 Supabase 服务状态阻塞。
+- 状态：完成；前端反馈和恢复后的真实链路均已验证。
 - 已改文件：
   - `apps/web/src/components/DemoChatMessage.vue`（移除访客消息中重复的“你”标签；增加明确失败状态）。
   - `apps/web/src/stores/chat.ts`（网络失败时结束占位状态并显示双语可恢复提示）。
@@ -123,9 +123,10 @@
   - 部署 API 的 CORS 仅允许 `https://grounddesk-ai-lsc.onrender.com`，不允许本地 `http://127.0.0.1:4173`。
   - 正式商品接口在正式站点 Origin 下仍返回 HTTP 500；聊天预检 CORS 正常。
   - `pnpm db:verify` 返回 `tenant/user postgres.lxerwevpyucbdgvhnrcr not found`；对应 Supabase 项目域名也无法解析。连接串项目引用与 `SUPABASE_URL` 一致，因此当前证据指向 Supabase 项目暂停、删除或连接信息失效，而非页面请求代码。
-- 待办：
-  - 项目所有者在 Supabase Dashboard 确认项目是否处于 Paused/Inactive、是否已被删除，以及当前 Project URL/连接串是否仍为 `lxerwevpyucbdgvhnrcr`。
-  - Supabase 恢复后重新运行 `pnpm db:verify`，再验证公开商品接口和一次真实问答。
-  - 需要本地连接线上 API 时，另行选择正式允许的预览域名或配置受控的本地 CORS；本轮不修改部署边界。
-- 阻塞：Supabase 项目端点无法解析，数据库连接池报告租户不存在。
-- 下一步：等待项目所有者确认 Supabase 项目状态；在此之前不把商品、问答和引用标记为通过。
+  - 项目所有者恢复 Supabase 后，`pnpm db:verify` 通过：8 个商品、30 个订单、向量基础设施、混合检索函数、8 条迁移及 26 张 RLS 表均有效。
+  - 正式站点 Origin 请求公开商品接口返回 HTTP 200 和 8 件商品；Render 免费 API 无需手动处理并已由请求唤醒。
+  - 真实问答通过：问题“LinkCore C240 线材的保修期是多久？”完成理解、检索、校验、流式生成和完成事件，回答 18 个月有限保修，并返回《Avenlo 配送、退货与保修政策》的真实引用片段。
+  - 本地开发页 `http://localhost:5173/demo` 和本地公开商品接口均返回 HTTP 200，可用于验收未部署的前端修复。
+- 待办：项目所有者在本地开发页进行视觉与交互验收；本轮仍不合并、不推送、不部署。
+- 阻塞：无。
+- 下一步：等待项目所有者验收，不自行扩展范围。
