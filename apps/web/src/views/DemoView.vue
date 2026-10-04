@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowUp, Headphones, RotateCcw, Sparkles } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { ArrowDown, ArrowLeft, ArrowUp, Headphones, RotateCcw } from 'lucide-vue-next'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { FeedbackRating, Locale } from '@grounddesk/shared'
 
 import DemoChatMessage from '../components/DemoChatMessage.vue'
+import DemoWelcome from '../components/DemoWelcome.vue'
 import DemoEvidencePanel from '../components/DemoEvidencePanel.vue'
+import { useDemoScroll } from '../composables/useDemoScroll'
+import { useDemoSelection } from '../composables/useDemoSelection'
 import { type ChatMessageView, useChatStore } from '../stores/chat'
 import { useShowcaseStore } from '../stores/showcase'
 
@@ -14,92 +17,108 @@ const { locale, t } = useI18n()
 const chatStore = useChatStore()
 const showcaseStore = useShowcaseStore()
 const draft = ref('')
+const composing = ref(false)
 const transcript = ref<HTMLElement | null>(null)
 const composer = ref<HTMLTextAreaElement | null>(null)
-const selectedMessageId = ref<string | null>(null)
-
-const scenarios = computed(() => [
-  {
-    key: 'product',
-    label: t('demo.scenarios.productTitle'),
-    description: t('demo.scenarios.productDescription'),
-    question: t('playground.examples.warranty'),
-  },
-  {
-    key: 'citation',
-    label: t('demo.scenarios.citationTitle'),
-    description: t('demo.scenarios.citationDescription'),
-    question: t('playground.examples.compatibility'),
-  },
-  {
-    key: 'unknown',
-    label: t('demo.scenarios.unknownTitle'),
-    description: t('demo.scenarios.unknownDescription'),
-    question: t('playground.examples.unknown'),
-  },
-])
-
-const latestAssistant = computed<ChatMessageView | null>(() => {
-  for (let index = chatStore.messages.length - 1; index >= 0; index -= 1) {
-    const message = chatStore.messages[index]
-    if (message?.role === 'assistant') return message
-  }
-  return null
-})
-
-const selectedMessage = computed<ChatMessageView | null>(() => {
-  if (selectedMessageId.value) {
-    const selected = chatStore.messages.find(
-      (message) => message.id === selectedMessageId.value && message.role === 'assistant',
+const activeView = ref<'chat' | 'evidence'>('chat')
+const returnFocus = ref<HTMLElement | null>(null)
+const evidencePanel = ref<HTMLElement | null>(null)
+const { selected, question, answerNumber, citationOrdinal, selectionRevision, select, reset } =
+  useDemoSelection(() => chatStore.messages)
+const { hasNewContent, onScroll, toBottom } = useDemoScroll(transcript, () =>
+  chatStore.messages
+    .map(
+      (message) =>
+        `${message.content.length}:${message.citations.length}:${message.tools.length}:${message.streaming}:${message.failed}`,
     )
-    if (selected) return selected
-  }
-  return latestAssistant.value
-})
-
-watch(
-  () =>
-    chatStore.messages
-      .map(
-        (message) =>
-          `${message.id}:${message.content.length}:${message.citations.length}:${message.tools.length}:${message.handedOff}`,
-      )
-      .join('|'),
-  async () => {
-    const latest = latestAssistant.value
-    if (latest && (latest.citations.length || latest.tools.length || latest.handedOff)) {
-      selectedMessageId.value = latest.id
-    }
-    await nextTick()
-    transcript.value?.scrollTo({ top: transcript.value.scrollHeight, behavior: 'smooth' })
-  },
+    .join('|'),
 )
-
-const selectQuestion = async (question: string): Promise<void> => {
-  draft.value = question
+const numberedMessages = computed(() => {
+  let number = 0
+  return chatStore.messages.map((message) => ({
+    message,
+    number: message.role === 'assistant' ? ++number : 0,
+  }))
+})
+const selectQuestion = async (value: string): Promise<void> => {
+  draft.value = value
+  activeView.value = 'chat'
   await nextTick()
   composer.value?.focus()
 }
-
+const selectEvidence = async (message: ChatMessageView, ordinal?: number): Promise<void> => {
+  returnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  select(message, ordinal ?? null)
+  activeView.value = 'evidence'
+  await nextTick()
+  evidencePanel.value?.scrollTo({ top: 0, behavior: 'instant' })
+  const target = ordinal
+    ? evidencePanel.value?.querySelector<HTMLElement>(`[data-source="${ordinal}"] summary`)
+    : document.getElementById('demo-evidence-title')
+  target?.focus({ preventScroll: true })
+  if (ordinal && target && evidencePanel.value) {
+    // Only the evidence pane should move; scrollIntoView also jumps the outer page.
+    const pane = evidencePanel.value
+    const targetBounds = target.getBoundingClientRect()
+    const paneBounds = pane.getBoundingClientRect()
+    if (targetBounds.top < paneBounds.top) pane.scrollTop += targetBounds.top - paneBounds.top
+    else if (targetBounds.bottom > paneBounds.bottom)
+      pane.scrollTop += targetBounds.bottom - paneBounds.bottom
+  }
+}
+const backToChat = async (): Promise<void> => {
+  activeView.value = 'chat'
+  await nextTick()
+  returnFocus.value?.focus({ preventScroll: true })
+}
 const send = async (): Promise<void> => {
   const content = draft.value.trim()
-  if (!content) return
+  if (!content || chatStore.isStreaming || composing.value) return
   draft.value = ''
-  await chatStore.sendMessage(content, locale.value as Locale)
+  const operation = chatStore.sendMessage(content, locale.value as Locale)
+  await toBottom()
+  await operation
 }
-
+const onComposerKey = (event: KeyboardEvent): void => {
+  if (
+    event.key !== 'Enter' ||
+    (!event.ctrlKey && !event.metaKey) ||
+    event.isComposing ||
+    composing.value
+  )
+    return
+  event.preventDefault()
+  void send()
+}
 const resetConversation = async (): Promise<void> => {
+  if (chatStore.isStreaming) return
   chatStore.resetConversation()
-  selectedMessageId.value = null
+  reset()
   draft.value = ''
-  await nextTick()
+  await toBottom()
   composer.value?.focus()
 }
-
+const recoverQuestion = (message: ChatMessageView): void => {
+  const index = chatStore.messages.indexOf(message)
+  const original = chatStore.messages[index - 1]
+  if (original?.role === 'user') void selectQuestion(original.content)
+}
 const submitFeedback = (message: ChatMessageView, rating: FeedbackRating): void => {
   void chatStore.submitFeedback(message, rating)
 }
-
+const onTabKey = (event: KeyboardEvent): void => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+  event.preventDefault()
+  activeView.value =
+    event.key === 'Home'
+      ? 'chat'
+      : event.key === 'End'
+        ? 'evidence'
+        : activeView.value === 'chat'
+          ? 'evidence'
+          : 'chat'
+  document.getElementById(`demo-tab-${activeView.value}`)?.focus()
+}
 onMounted(() => void showcaseStore.loadProducts())
 </script>
 
@@ -107,119 +126,147 @@ onMounted(() => void showcaseStore.loadProducts())
   <main class="demo-page">
     <section class="demo-shell">
       <header class="demo-topbar">
-        <RouterLink to="/" class="demo-topbar__back">
-          <ArrowLeft :size="17" />{{ t('demo.back') }}
-        </RouterLink>
+        <RouterLink to="/" class="demo-topbar__back"
+          ><ArrowLeft :size="16" />{{ t('demo.back') }}</RouterLink
+        >
         <div class="demo-topbar__brand">
-          <span>A</span>
-          <strong>AVENLO</strong>
-          <small>{{ t('demo.simulated') }}</small>
+          <span>A</span><strong>AVENLO</strong><small>{{ t('demo.experience.fictional') }}</small>
         </div>
         <p>{{ t('demo.privacy') }}</p>
       </header>
-
       <div class="demo-intro">
         <div>
-          <p><span></span>{{ t('demo.eyebrow') }}</p>
-          <h1>{{ t('demo.title') }}</h1>
+          <p>{{ t('demo.eyebrow') }}</p>
+          <h1>{{ t('demo.experience.title') }}</h1>
         </div>
-        <p>{{ t('demo.description') }}</p>
+        <p>{{ t('demo.experience.description') }}</p>
       </div>
-
-      <div class="demo-layout">
-        <section id="support" class="demo-chat" aria-labelledby="demo-chat-title">
+      <div
+        class="demo-mobile-tabs"
+        role="tablist"
+        :aria-label="t('demo.experience.tabsLabel')"
+        @keydown="onTabKey"
+      >
+        <button
+          id="demo-tab-chat"
+          type="button"
+          role="tab"
+          aria-controls="demo-chat-panel"
+          :aria-selected="activeView === 'chat'"
+          :tabindex="activeView === 'chat' ? 0 : -1"
+          @click="activeView = 'chat'"
+        >
+          {{ t('demo.experience.chatTab') }}
+        </button>
+        <button
+          id="demo-tab-evidence"
+          type="button"
+          role="tab"
+          aria-controls="demo-evidence-panel"
+          :aria-selected="activeView === 'evidence'"
+          :tabindex="activeView === 'evidence' ? 0 : -1"
+          @click="activeView = 'evidence'"
+        >
+          {{ t('demo.experience.evidenceTab')
+          }}<span v-if="selected?.citations.length">{{ selected.citations.length }}</span>
+        </button>
+      </div>
+      <div class="demo-layout" :data-view="activeView">
+        <section id="demo-chat-panel" class="demo-chat" aria-labelledby="demo-chat-title">
           <header class="demo-chat__header">
             <div>
-              <span><Headphones :size="18" /></span>
+              <span><Headphones :size="19" /></span>
               <div>
                 <h2 id="demo-chat-title">Avenlo Support</h2>
                 <p>
-                  <i :class="{ 'is-busy': chatStore.isStreaming }"></i>
-                  {{ chatStore.isStreaming ? t('demo.chat.processing') : t('demo.chat.ready') }}
+                  <i :class="{ 'is-busy': chatStore.isStreaming }"></i
+                  >{{ chatStore.isStreaming ? t('demo.chat.processing') : t('demo.chat.ready') }}
                 </p>
               </div>
             </div>
             <button
               type="button"
+              :disabled="chatStore.isStreaming"
               :aria-label="t('playground.newConversation')"
               @click="resetConversation"
             >
               <RotateCcw :size="16" />
             </button>
           </header>
-
-          <div ref="transcript" class="demo-chat__transcript" aria-live="polite">
-            <section v-if="!chatStore.hasMessages" class="demo-chat__welcome">
-              <span><Sparkles :size="18" /></span>
-              <div>
-                <h3>{{ t('demo.chat.welcome') }}</h3>
-                <p>{{ t('demo.chat.welcomeDescription') }}</p>
-              </div>
-              <div class="demo-scenario-list">
-                <button
-                  v-for="(scenario, index) in scenarios"
-                  :key="scenario.key"
-                  type="button"
-                  :disabled="chatStore.isStreaming"
-                  @click="selectQuestion(scenario.question)"
-                >
-                  <span>0{{ index + 1 }}</span>
-                  <strong>{{ scenario.label }}</strong>
-                  <small>{{ scenario.description }}</small>
-                </button>
-              </div>
-            </section>
-
-            <DemoChatMessage
-              v-for="message in chatStore.messages"
-              :key="message.id"
-              :message="message"
-              :is-selected="selectedMessage?.id === message.id"
-              @feedback="submitFeedback"
-              @select="selectedMessageId = $event.id"
-            />
+          <div class="demo-chat__body">
+            <div
+              ref="transcript"
+              class="demo-chat__transcript"
+              tabindex="0"
+              :aria-label="t('demo.experience.transcript')"
+              @scroll="onScroll"
+            >
+              <DemoWelcome v-if="!chatStore.hasMessages" @select="selectQuestion" />
+              <DemoChatMessage
+                v-for="(entry, index) in numberedMessages"
+                :key="index"
+                :message="entry.message"
+                :answer-number="entry.number"
+                :is-selected="selected === entry.message"
+                @feedback="submitFeedback"
+                @select="selectEvidence"
+                @recover="recoverQuestion"
+              />
+            </div>
+            <button v-if="hasNewContent" type="button" class="demo-new-content" @click="toBottom">
+              <ArrowDown :size="15" />{{ t('demo.experience.newContent') }}
+            </button>
           </div>
-
+          <div v-if="chatStore.error" class="demo-chat__error" role="alert">
+            <strong>{{ t('demo.experience.requestNotice') }}</strong
+            ><span>{{ chatStore.error }}</span>
+          </div>
           <form class="demo-chat__composer" @submit.prevent="send">
             <label class="visually-hidden" for="demo-message">{{
               t('playground.inputLabel')
             }}</label>
-            <textarea
-              id="demo-message"
-              ref="composer"
-              v-model="draft"
-              rows="3"
-              :disabled="chatStore.isStreaming"
-              :placeholder="t('demo.chat.placeholder')"
-              @keydown.ctrl.enter.prevent="send"
-            ></textarea>
-            <div>
-              <span>{{ t('demo.chat.sendHint') }}</span>
+            <div class="demo-chat__input">
+              <textarea
+                id="demo-message"
+                ref="composer"
+                v-model="draft"
+                rows="2"
+                :placeholder="t('demo.chat.placeholder')"
+                @compositionstart="composing = true"
+                @compositionend="composing = false"
+                @keydown="onComposerKey"
+              ></textarea>
               <button
                 type="submit"
-                :disabled="chatStore.isStreaming || !draft.trim()"
+                :disabled="chatStore.isStreaming || !draft.trim() || composing"
                 :aria-label="t('playground.send')"
               >
-                <ArrowUp :size="18" />
+                <ArrowUp :size="19" />
               </button>
             </div>
+            <span>{{
+              chatStore.isStreaming
+                ? t('demo.experience.draftWhileWaiting')
+                : t('demo.experience.composerHint')
+            }}</span>
           </form>
-
-          <div v-if="chatStore.error" class="demo-chat__error" role="alert">
-            <strong>{{ t('demo.chat.errorTitle') }}</strong>
-            <span>{{ chatStore.error }}</span>
-          </div>
           <footer>{{ t('demo.chat.footer') }}</footer>
         </section>
-
-        <DemoEvidencePanel
-          :is-loading="showcaseStore.isProductsLoading"
-          :message="selectedMessage"
-          :product-error="showcaseStore.productError"
-          :products="showcaseStore.products"
-          @retry-products="showcaseStore.loadProducts(true)"
-          @select-order="selectQuestion(t('playground.examples.order'))"
-        />
+        <div id="demo-evidence-panel" ref="evidencePanel" class="demo-evidence-wrapper">
+          <DemoEvidencePanel
+            :is-loading="showcaseStore.isProductsLoading"
+            :message="selected"
+            :question="question"
+            :answer-number="answerNumber"
+            :citation-ordinal="citationOrdinal"
+            :selection-revision="selectionRevision"
+            :product-error="showcaseStore.productError"
+            :products="showcaseStore.products"
+            @retry-products="showcaseStore.loadProducts(true)"
+            @select-order="selectQuestion(t('playground.examples.order'))"
+            @back="backToChat"
+          />
+        </div>
       </div>
     </section>
   </main>

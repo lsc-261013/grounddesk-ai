@@ -1,6 +1,7 @@
 import { createI18n } from 'vue-i18n'
 
 import type { Locale } from '@grounddesk/shared'
+import { demoExperienceEn, demoExperienceZh } from './locales/demoExperience'
 
 const LOCALE_STORAGE_KEY = 'grounddesk-locale'
 
@@ -166,6 +167,7 @@ export const i18n = createI18n({
       },
       demo: {
         back: '返回 GroundDesk',
+        experience: demoExperienceZh,
         eyebrow: '公开体验 · 可信 AI 客服',
         simulated: 'Demo Workspace · 所有商品与订单均为模拟数据',
         privacy: '请勿输入真实订单或个人信息',
@@ -788,6 +790,7 @@ export const i18n = createI18n({
       },
       demo: {
         back: 'Back to GroundDesk',
+        experience: demoExperienceEn,
         eyebrow: 'PUBLIC EXPERIENCE · TRUSTED AI SUPPORT',
         simulated: 'Demo Workspace · All products and orders are simulated',
         privacy: 'Do not enter real orders or personal information',

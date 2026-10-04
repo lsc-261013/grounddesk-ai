@@ -19,6 +19,6 @@ describe('Demo evidence panel', () => {
     })
 
     expect(wrapper.get('.demo-evidence').attributes('aria-label')).toBe('当前回答上下文')
-    expect(wrapper.text()).toContain('等待一条有依据的回答')
+    expect(wrapper.text()).toContain('回答与原文，在这里对照')
   })
 })

@@ -104,11 +104,14 @@ test('live demo cites knowledge, calls tools, and completes human handoff', asyn
   test.setTimeout(180_000)
 
   await page.goto('/demo')
-  await page.getByRole('button', { name: '填入订单查询', exact: true }).click()
+  await page.getByRole('button', { name: '模拟订单查询', exact: true }).click()
   await page.getByRole('button', { name: '发送问题', exact: true }).click()
-  await expect(page.locator('.demo-tool')).toContainText('订单凭据已由服务端校验', {
-    timeout: 45_000,
-  })
+  await expect(page.locator('.demo-message .demo-tool').first()).toContainText(
+    '订单凭据已由服务端校验',
+    {
+      timeout: 45_000,
+    },
+  )
   await expect(page.locator('.demo-message[data-role="assistant"]').last()).toContainText(
     'GD-2026D019',
   )

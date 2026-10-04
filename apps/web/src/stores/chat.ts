@@ -40,6 +40,7 @@ export interface ChatMessageView {
   handedOff: boolean
   failed: boolean
   feedback: FeedbackRating | null
+  feedbackPending?: boolean
 }
 
 const requestFailureCopy = (locale: Locale): string =>
@@ -141,6 +142,7 @@ export const useChatStore = defineStore('chat', () => {
       return
     }
     if (streamEvent.type === 'done') {
+      if (message.failed) return
       message.id = streamEvent.messageId
       message.refused = streamEvent.refused
       message.handedOff = streamEvent.handedOff
@@ -149,6 +151,8 @@ export const useChatStore = defineStore('chat', () => {
       return
     }
     error.value = streamEvent.message
+    message.failed = true
+    message.streaming = false
   }
 
   const ensureChannel = (channel: string): void => {
@@ -243,12 +247,21 @@ export const useChatStore = defineStore('chat', () => {
         const payload: unknown = JSON.parse(buffer.slice(6))
         applyEvent(assistant, chatStreamEventSchema.parse(payload))
       }
+      if (assistant.streaming) {
+        throw new Error(
+          locale === 'zh-CN'
+            ? '连接在回答完成前中断。已有内容可能不完整，请核对后再发送；工单状态尚未确认。'
+            : 'The stream ended before completion. The answer may be incomplete; review it before sending again. Ticket status is not confirmed.',
+        )
+      }
+      if (assistant.failed && !assistant.content) assistant.content = requestFailureCopy(locale)
     } catch (cause) {
       error.value = requestFailureDetail(cause, locale)
       if (!assistant.content) assistant.content = requestFailureCopy(locale)
       assistant.failed = true
       assistant.streaming = false
     } finally {
+      assistant.streaming = false
       isStreaming.value = false
     }
   }
@@ -264,6 +277,7 @@ export const useChatStore = defineStore('chat', () => {
   ): Promise<void> => send(rawMessage, locale, `workspace:${workspaceId}`, accessToken)
 
   const resetChannel = (channel: string): void => {
+    if (isStreaming.value) return
     activeChannel.value = channel
     sessionId.value = crypto.randomUUID()
     window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId.value)
@@ -280,7 +294,15 @@ export const useChatStore = defineStore('chat', () => {
     message: ChatMessageView,
     rating: FeedbackRating,
   ): Promise<void> => {
-    if (!conversationId.value || message.role !== 'assistant' || message.streaming) return
+    if (
+      !conversationId.value ||
+      message.role !== 'assistant' ||
+      message.streaming ||
+      message.failed ||
+      message.feedbackPending
+    )
+      return
+    message.feedbackPending = true
     error.value = null
     try {
       const workspaceId = activeChannel.value.startsWith('workspace:')
@@ -308,6 +330,8 @@ export const useChatStore = defineStore('chat', () => {
       message.feedback = rating
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Feedback submission failed.'
+    } finally {
+      message.feedbackPending = false
     }
   }
 
