@@ -586,6 +586,7 @@
   margin: 0 0 4px;
 }
 .demo-evidence__list details {
+  position: relative;
   border: 1px solid var(--demo-line);
   border-radius: 8px;
   background: white;
@@ -594,6 +595,25 @@
 }
 .demo-evidence__list details.is-active {
   border-color: #4e9d79;
+  background: #f4faf5;
+  box-shadow: inset 3px 0 #4e9d79;
+}
+.demo-source-locator {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: #4e9d79;
+  opacity: 0;
+  animation: source-locate 850ms ease-out both;
+}
+@keyframes source-locate {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 0;
+  }
 }
 .demo-evidence__list summary {
   display: grid;

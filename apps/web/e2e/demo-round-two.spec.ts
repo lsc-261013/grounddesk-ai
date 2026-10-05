@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
 const screenshotDir = fileURLToPath(
-  new URL('../../../docs/images/demo-round-two/', import.meta.url),
+  new URL('../../../docs/images/demo-round-three/', import.meta.url),
 )
 test('home scenarios change actual content without model requests and prefill a manual draft', async ({
   page,

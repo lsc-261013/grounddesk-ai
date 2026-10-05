@@ -25,8 +25,16 @@ const composer = ref<HTMLTextAreaElement | null>(null)
 const activeView = ref<'chat' | 'evidence'>('chat')
 const returnFocus = ref<HTMLElement | null>(null)
 const evidencePanel = ref<HTMLElement | null>(null)
-const { selected, question, answerNumber, citationOrdinal, selectionRevision, select, reset } =
-  useDemoSelection(() => chatStore.messages)
+const {
+  selected,
+  question,
+  answerNumber,
+  citationOrdinal,
+  selectionRevision,
+  select,
+  toggleSource,
+  reset,
+} = useDemoSelection(() => chatStore.messages)
 const { hasNewContent, onScroll, toBottom } = useDemoScroll(transcript, () =>
   chatStore.messages
     .map(
@@ -51,21 +59,28 @@ const selectQuestion = async (value: string): Promise<void> => {
 const selectEvidence = async (message: ChatMessageView, ordinal?: number): Promise<void> => {
   returnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   select(message, ordinal ?? null)
+  const revision = selectionRevision.value
   activeView.value = 'evidence'
   await nextTick()
-  evidencePanel.value?.scrollTo({ top: 0, behavior: 'instant' })
-  const target = ordinal
-    ? evidencePanel.value?.querySelector<HTMLElement>(`[data-source="${ordinal}"] summary`)
+  if (revision !== selectionRevision.value) return
+  const target = citationOrdinal.value
+    ? evidencePanel.value?.querySelector<HTMLElement>(
+        `[data-source="${citationOrdinal.value}"] summary`,
+      )
     : document.getElementById('demo-evidence-title')
   target?.focus({ preventScroll: true })
-  if (ordinal && target && evidencePanel.value) {
+  if (target && evidencePanel.value) {
     // Only the evidence pane should move; scrollIntoView also jumps the outer page.
     const pane = evidencePanel.value
     const targetBounds = target.getBoundingClientRect()
     const paneBounds = pane.getBoundingClientRect()
-    if (targetBounds.top < paneBounds.top) pane.scrollTop += targetBounds.top - paneBounds.top
-    else if (targetBounds.bottom > paneBounds.bottom)
-      pane.scrollTop += targetBounds.bottom - paneBounds.bottom
+    // Include the start of the excerpt, not just its collapsed heading, in the readable area.
+    const previewHeight = citationOrdinal.value ? 96 : 0
+    if (
+      targetBounds.top < paneBounds.top + 12 ||
+      targetBounds.bottom + previewHeight > paneBounds.bottom - 12
+    )
+      pane.scrollTop += targetBounds.top - paneBounds.top - 12
   }
 }
 const backToChat = async (): Promise<void> => {
@@ -276,6 +291,7 @@ onMounted(() => {
             @retry-products="showcaseStore.loadProducts(true)"
             @select-order="selectQuestion(t('playground.examples.order'))"
             @back="backToChat"
+            @toggle-source="toggleSource"
           />
         </div>
       </div>

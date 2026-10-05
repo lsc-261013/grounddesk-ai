@@ -10,14 +10,17 @@ import {
   ShieldCheck,
   TicketCheck,
 } from 'lucide-vue-next'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import SupportPreview from '../components/SupportPreview.vue'
+import { useLandingReveal } from '../composables/useLandingReveal'
 import { useShowcaseStore } from '../stores/showcase'
 
 const { locale, t } = useI18n()
 const showcaseStore = useShowcaseStore()
+const pageElement = ref<HTMLElement | null>(null)
+useLandingReveal(pageElement)
 const evaluation = computed(() => showcaseStore.evaluation)
 const contactUrl = import.meta.env.VITE_CONTACT_URL?.trim()
 const githubUrl = import.meta.env.VITE_GITHUB_URL?.trim()
@@ -26,7 +29,7 @@ onMounted(() => void showcaseStore.loadEvaluation())
 </script>
 
 <template>
-  <main class="landing-page">
+  <main ref="pageElement" class="landing-page">
     <section class="landing-hero">
       <div class="landing-hero__copy">
         <p class="landing-eyebrow"><span></span>{{ t('landing.hero.eyebrow') }}</p>
@@ -49,11 +52,11 @@ onMounted(() => void showcaseStore.loadEvaluation())
           <li><TicketCheck :size="16" />{{ t('presentation.handoff') }}</li>
         </ul>
       </div>
-      <SupportPreview />
+      <div class="landing-hero__stage"><SupportPreview /></div>
     </section>
 
     <section class="landing-workbench" aria-labelledby="scenario-title">
-      <div class="landing-workbench__inner">
+      <div class="landing-workbench__inner landing-reveal">
         <header class="landing-section__heading landing-section__heading--dark">
           <div>
             <p class="landing-eyebrow landing-eyebrow--dark">
@@ -103,7 +106,7 @@ onMounted(() => void showcaseStore.loadEvaluation())
       </div>
     </section>
 
-    <section id="project-notes" class="landing-section landing-evaluation">
+    <section id="project-notes" class="landing-section landing-evaluation landing-reveal">
       <div class="landing-evaluation__copy">
         <p class="landing-eyebrow"><span></span>{{ t('landing.evaluation.eyebrow') }}</p>
         <h2>{{ t('landing.evaluation.title') }}</h2>
@@ -152,7 +155,7 @@ onMounted(() => void showcaseStore.loadEvaluation())
       </div>
     </section>
 
-    <section id="architecture" class="landing-section landing-architecture">
+    <section id="architecture" class="landing-section landing-architecture landing-reveal">
       <header class="landing-section__heading">
         <div>
           <p class="landing-eyebrow"><span></span>{{ t('landing.architecture.eyebrow') }}</p>

@@ -74,6 +74,7 @@ describe('Demo selected evidence', () => {
     const selection = useDemoSelection(() => messages.value)
     await nextTick()
     const first = messages.value[1]!
+    first.citations = [citation]
     selection.select(first, 1)
     messages.value.push(message('user', 'Next question'), message('assistant', 'Streaming'))
     await nextTick()
@@ -110,8 +111,10 @@ describe('Demo selected evidence', () => {
     expect(wrapper.text()).toContain('第 2 页–3')
     expect(wrapper.find('.demo-evidence__handoff').exists()).toBe(true)
     await wrapper.get('[data-source="1"] summary').trigger('click')
+    expect(wrapper.emitted('toggleSource')).toEqual([[1]])
+    await wrapper.setProps({ citationOrdinal: null })
     expect(wrapper.get('[data-source="1"]').attributes('open')).toBeUndefined()
-    await wrapper.setProps({ selectionRevision: 2 })
+    await wrapper.setProps({ citationOrdinal: 1, selectionRevision: 2 })
     expect(wrapper.get('[data-source="1"]').attributes('open')).toBeDefined()
   })
 })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BookOpenCheck, Box, ChevronRight, RotateCcw, TicketCheck } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { ChatCitation, PublicProduct } from '@grounddesk/shared'
@@ -18,7 +18,12 @@ const props = defineProps<{
   citationOrdinal?: number | null
   selectionRevision?: number
 }>()
-const emit = defineEmits<{ retryProducts: []; selectOrder: []; back: [] }>()
+const emit = defineEmits<{
+  retryProducts: []
+  selectOrder: []
+  back: []
+  toggleSource: [ordinal: number]
+}>()
 const { locale, t } = useI18n()
 const citations = computed(() => props.message?.citations ?? [])
 const sectionLabel = (citation: ChatCitation): string =>
@@ -26,19 +31,6 @@ const sectionLabel = (citation: ChatCitation): string =>
     .filter((part) => part !== citation.documentTitle)
     .slice(-2)
     .join(' / ')
-const openOrdinal = ref<number | null>(null)
-watch(
-  () => props.message,
-  () => {
-    openOrdinal.value = null
-  },
-)
-watch(
-  () => [props.message, props.citationOrdinal, props.selectionRevision] as const,
-  ([, ordinal]) => {
-    openOrdinal.value = ordinal ?? null
-  },
-)
 const emptyState = computed(() =>
   !props.message
     ? 'initial'
@@ -115,14 +107,16 @@ const hasToolOutcome = computed(() => Boolean(props.message?.tools.length))
           v-for="citation in citations"
           :key="`${message?.id}-${citation.chunkId}`"
           :data-source="citation.ordinal"
-          :open="openOrdinal === citation.ordinal"
+          :open="citationOrdinal === citation.ordinal"
           :class="{ 'is-active': citationOrdinal === citation.ordinal }"
         >
-          <summary
-            @click.prevent="
-              openOrdinal = openOrdinal === citation.ordinal ? null : citation.ordinal
-            "
-          >
+          <summary @click.prevent="emit('toggleSource', citation.ordinal)">
+            <span
+              v-if="citationOrdinal === citation.ordinal && selectionRevision"
+              :key="selectionRevision"
+              class="demo-source-locator"
+              aria-hidden="true"
+            ></span>
             <span>[{{ citation.ordinal }}]</span>
             <div>
               <strong>{{ citation.documentTitle }}</strong
