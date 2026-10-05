@@ -103,6 +103,7 @@ export interface AgentRepository {
     source: ConversationSource
   }): Promise<ConversationRecord | null>
   saveUserMessage(workspaceId: string, conversationId: string, content: string): Promise<string>
+  getRecentUserMessages(workspaceId: string, conversationId: string): Promise<string[]>
   saveAssistantMessage(input: SaveAssistantMessageInput): Promise<string>
   saveCitations(workspaceId: string, messageId: string, citations: ChatCitation[]): Promise<void>
   saveRetrievalLog(input: RetrievalLogInput): Promise<void>

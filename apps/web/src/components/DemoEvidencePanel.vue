@@ -50,6 +50,7 @@ const emptyState = computed(() =>
 )
 const productName = (product: PublicProduct): string =>
   locale.value === 'zh-CN' ? product.nameZh : product.nameEn
+const hasToolOutcome = computed(() => Boolean(props.message?.tools.length))
 </script>
 
 <template>
@@ -69,6 +70,16 @@ const productName = (product: PublicProduct): string =>
         <span>{{ t('demo.experience.answerNumber', { number: answerNumber || 1 }) }}</span>
         <p>{{ question }}</p>
       </div>
+      <div v-if="!message" class="demo-context-guide">
+        <BookOpenCheck :size="32" :stroke-width="1.3" />
+        <h3>{{ t('presentation.demo.contextTitle') }}</h3>
+        <p>{{ t('presentation.demo.contextLead') }}</p>
+        <ol>
+          <li><span>01</span>{{ t('presentation.demo.contextProduct') }}</li>
+          <li><span>02</span>{{ t('presentation.demo.contextOrder') }}</li>
+          <li><span>03</span>{{ t('presentation.demo.contextHandoff') }}</li>
+        </ol>
+      </div>
       <div v-if="message?.handedOff && !message.failed" class="demo-evidence__handoff">
         <TicketCheck :size="19" />
         <div>
@@ -79,9 +90,17 @@ const productName = (product: PublicProduct): string =>
       <p v-else-if="message?.refused && !message.streaming" class="demo-evidence__unconfirmed">
         {{ t('demo.experience.handoffUnconfirmed') }}
       </p>
-      <p v-if="message?.failed && citations.length" class="demo-message__notice">
+      <p
+        v-if="message?.failed && (citations.length || hasToolOutcome)"
+        class="demo-message__notice"
+      >
         {{ t('demo.experience.evidenceState.failed.description') }}
       </p>
+      <div v-if="hasToolOutcome" class="demo-evidence__tools">
+        <h3>{{ t('demo.sources.toolsTitle') }}</h3>
+        <DemoToolResult v-for="(tool, index) in message?.tools" :key="index" :tool="tool" />
+        <p class="demo-evidence__disclaimer">{{ t('presentation.demo.toolResultNote') }}</p>
+      </div>
       <div v-if="citations.length" class="demo-evidence__list">
         <p class="demo-evidence__disclaimer">
           {{
@@ -124,14 +143,28 @@ const productName = (product: PublicProduct): string =>
           </div>
         </details>
       </div>
-      <div v-else class="demo-evidence__empty" :data-state="emptyState">
+      <div
+        v-else-if="message && !hasToolOutcome && (!message.handedOff || message.failed)"
+        class="demo-evidence__empty"
+        :data-state="emptyState"
+      >
         <strong>{{ t(`demo.experience.evidenceState.${emptyState}.title`) }}</strong>
-        <p>{{ t(`demo.experience.evidenceState.${emptyState}.description`) }}</p>
+        <p>
+          {{
+            t(
+              emptyState === 'none'
+                ? 'presentation.demo.noSourceReply'
+                : `demo.experience.evidenceState.${emptyState}.description`,
+            )
+          }}
+        </p>
       </div>
-      <div v-if="message?.tools.length" class="demo-evidence__tools">
-        <h3>{{ t('demo.sources.toolsTitle') }}</h3>
-        <DemoToolResult v-for="(tool, index) in message.tools" :key="index" :tool="tool" />
-      </div>
+      <p
+        v-else-if="message?.handedOff && !message.failed && !citations.length && !hasToolOutcome"
+        class="demo-evidence__disclaimer"
+      >
+        {{ t('presentation.demo.noSourceHandoff') }}
+      </p>
     </section>
     <details class="demo-order-context">
       <summary>{{ t('demo.order.title') }}<ChevronRight :size="16" /></summary>

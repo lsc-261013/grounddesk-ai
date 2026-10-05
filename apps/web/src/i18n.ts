@@ -2,6 +2,7 @@ import { createI18n } from 'vue-i18n'
 
 import type { Locale } from '@grounddesk/shared'
 import { demoExperienceEn, demoExperienceZh } from './locales/demoExperience'
+import { presentationEn, presentationZh } from './locales/presentation'
 
 const LOCALE_STORAGE_KEY = 'grounddesk-locale'
 
@@ -19,6 +20,7 @@ export const i18n = createI18n({
   fallbackLocale: 'en-US',
   messages: {
     'zh-CN': {
+      presentation: presentationZh,
       navigation: {
         architecture: '架构基线',
         status: '系统状态',
@@ -110,7 +112,7 @@ export const i18n = createI18n({
           groundedResult: '用户看到答案、引用编号和相关原文',
           unknownLabel: '资料不足',
           unknownTitle: '不确定时明确停下来',
-          unknownDescription: '没有可靠证据、资料冲突或问题超出知识库时，系统不会编造。',
+          unknownDescription: '没有可靠证据、资料冲突或问题超出知识库时，停止回答并交给人工核对。',
           unknownResult: '说明已检查的范围，并触发人工接管',
           handoffLabel: '人工处理',
           handoffTitle: '把上下文完整交给客服',
@@ -633,6 +635,7 @@ export const i18n = createI18n({
       locale: 'EN',
     },
     'en-US': {
+      presentation: presentationEn,
       navigation: {
         architecture: 'Architecture baseline',
         status: 'System status',
@@ -728,7 +731,7 @@ export const i18n = createI18n({
           unknownLabel: 'INSUFFICIENT EVIDENCE',
           unknownTitle: 'Uncertainty has a visible stopping point',
           unknownDescription:
-            'When sources are missing, conflicting, or outside the knowledge base, the system does not invent an answer.',
+            'When sources are missing, conflicting, or outside the knowledge base, answering stops and the question is passed to human review.',
           unknownResult: 'It explains what was checked and initiates human handoff',
           handoffLabel: 'HUMAN REVIEW',
           handoffTitle: 'Support receives the useful context',
@@ -822,13 +825,13 @@ export const i18n = createI18n({
           footer: 'Trusted support by GroundDesk · Answers you can verify',
         },
         scenarios: {
-          productTitle: 'Ask about products and warranty',
+          productTitle: 'Product warranty',
           productDescription:
             'Try a question covered by the sources and inspect how the answer is grounded.',
-          citationTitle: 'Inspect the supporting evidence',
+          citationTitle: 'Inspect sources',
           citationDescription:
             'Start with compatibility, then open the title, section, and relevant excerpt.',
-          unknownTitle: 'See what happens without evidence',
+          unknownTitle: 'Beyond the sources',
           unknownDescription:
             'Ask beyond the knowledge base and check that the system stops and hands off.',
         },
@@ -849,7 +852,7 @@ export const i18n = createI18n({
         },
         order: {
           kicker: 'READY TO TRY',
-          title: 'Simulated order lookup',
+          title: 'Demo order lookup',
           description:
             "Order GD-2026D019 · demo.customer19{'@'}example.com. Demo data only; it does not identify a real customer.",
           fill: 'Fill the order query',

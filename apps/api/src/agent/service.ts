@@ -27,6 +27,8 @@ import type { ToolExecutionService } from '../tools/types.js'
 import { chatCopy } from './copy.js'
 import { PublicChatError } from './errors.js'
 import { constrainAgentPlan, shouldUseModelPlanner } from './plan-constraints.js'
+import { resolveOrderContext } from './order-context.js'
+import { presentVerifiedOrder } from './order-presentation.js'
 import type {
   AgentRepository,
   ConversationRecord,
@@ -66,6 +68,7 @@ interface RunContext {
   startedAt: number
   quotaExempt: boolean
   source: ConversationSource
+  planningMessage: string
 }
 
 interface GenerationOutcome {
@@ -196,6 +199,8 @@ export class DefaultAgentService implements AgentService {
     if (conversation.status === 'closed') {
       throw new PublicChatError('This conversation is closed.', 409, 'conversation_closed')
     }
+    const history = await this.repository.getRecentUserMessages(workspace.id, conversation.id)
+    const planningMessage = resolveOrderContext(input.message, history)
     await this.repository.saveUserMessage(workspace.id, conversation.id, input.message)
     return {
       conversationId: conversation.id,
@@ -206,6 +211,7 @@ export class DefaultAgentService implements AgentService {
         startedAt: performance.now(),
         quotaExempt: options.quotaExempt === true,
         source,
+        planningMessage,
       }),
     }
   }
@@ -280,9 +286,9 @@ export class DefaultAgentService implements AgentService {
     }
 
     let planning: AgentPlanResult
-    if (shouldUseModelPlanner(input.message)) {
+    if (shouldUseModelPlanner(context.planningMessage)) {
       try {
-        planning = await this.generation.plan(input.message, input.locale)
+        planning = await this.generation.plan(context.planningMessage, input.locale)
       } catch {
         yield stage('understanding', 'failed')
         yield* this.finishRefusal(
@@ -306,7 +312,7 @@ export class DefaultAgentService implements AgentService {
         usage: EMPTY_USAGE,
       }
     }
-    planning = { ...planning, plan: constrainAgentPlan(planning.plan, input.message) }
+    planning = { ...planning, plan: constrainAgentPlan(planning.plan, context.planningMessage) }
     yield stage('understanding', 'completed')
 
     if (planning.plan.intent === 'human_handoff') {
@@ -463,13 +469,18 @@ export class DefaultAgentService implements AgentService {
     const plan = planning.plan
     if (plan.intent !== 'order_lookup' && plan.intent !== 'return_eligibility') return
     if (!plan.toolCall) {
-      const fallbackFields =
-        plan.missingFields.length > 0
-          ? plan.missingFields
-          : plan.intent === 'order_lookup'
-            ? ['orderNumber', 'email']
-            : ['orderNumber', 'email', 'reason', 'opened']
-      const answer = chatCopy[context.input.locale].missing(fallbackFields)
+      if (!plan.missingFields.length) {
+        yield* this.finishRefusal(
+          context,
+          'human_handoff',
+          chatCopy[context.input.locale].planningFailure,
+          'planning_unavailable',
+          [],
+          planning,
+        )
+        return
+      }
+      const answer = chatCopy[context.input.locale].missing(plan.missingFields)
       yield event({ type: 'token', delta: answer })
       const messageId = await this.repository.saveAssistantMessage({
         workspaceId: context.workspace.id,
@@ -503,49 +514,62 @@ export class DefaultAgentService implements AgentService {
     let toolDetails: ToolEventDetails
     let safeToolResult: Record<string, unknown> | null = null
     let resultSummary: Record<string, unknown> | null = null
-    if (plan.toolCall.name === 'order_lookup') {
-      const result = await this.tools.lookupOrder(
-        context.workspace.id,
-        plan.toolCall.input,
-        context.input.locale,
-      )
-      status = result.status
-      if (result.order) {
-        safeToolResult = { kind: 'order_lookup', ...result }
-        resultSummary = { status: result.status, orderStatus: result.order.status }
-        toolDetails = {
-          kind: 'order_lookup',
-          orderNumber: result.order.orderNumber,
-          orderStatus: result.order.status,
-          itemModels: result.order.items.map((item) => item.model),
+    let verifiedOrderAnswer: string | null = null
+    try {
+      if (plan.toolCall.name === 'order_lookup') {
+        const result = await this.tools.lookupOrder(
+          context.workspace.id,
+          plan.toolCall.input,
+          context.input.locale,
+        )
+        status = result.status
+        if (result.order) {
+          verifiedOrderAnswer = presentVerifiedOrder(result.order, context.input.locale)
+          safeToolResult = { kind: 'order_lookup', ...result }
+          resultSummary = { status: result.status, orderStatus: result.order.status }
+          toolDetails = {
+            kind: 'order_lookup',
+            orderNumber: result.order.orderNumber,
+            orderStatus: result.order.status,
+            itemModels: result.order.items.map((item) => item.model),
+          }
+        } else {
+          toolDetails = { kind: 'status', code: result.status }
         }
       } else {
-        toolDetails = { kind: 'status', code: result.status }
-      }
-    } else {
-      const result = await this.tools.evaluateReturn(
-        context.workspace.id,
-        plan.toolCall.input,
-        context.input.locale,
-      )
-      status = result.status
-      if (result.result && result.order) {
-        safeToolResult = { kind: 'return_eligibility', ...result }
-        resultSummary = {
-          status: result.status,
-          eligibility: result.result.status,
-          policyVersion: result.result.policyVersion,
-          reasonCodes: result.result.reasonCodes,
+        const result = await this.tools.evaluateReturn(
+          context.workspace.id,
+          plan.toolCall.input,
+          context.input.locale,
+        )
+        status = result.status
+        if (result.result && result.order) {
+          safeToolResult = { kind: 'return_eligibility', ...result }
+          resultSummary = {
+            status: result.status,
+            eligibility: result.result.status,
+            policyVersion: result.result.policyVersion,
+            reasonCodes: result.result.reasonCodes,
+          }
+          toolDetails = {
+            kind: 'return_eligibility',
+            eligibility: result.result.status,
+            policyVersion: result.result.policyVersion,
+            reasonCodes: result.result.reasonCodes,
+          }
+        } else {
+          toolDetails = { kind: 'status', code: result.status }
         }
-        toolDetails = {
-          kind: 'return_eligibility',
-          eligibility: result.result.status,
-          policyVersion: result.result.policyVersion,
-          reasonCodes: result.result.reasonCodes,
-        }
-      } else {
-        toolDetails = { kind: 'status', code: result.status }
       }
+    } catch {
+      status = 'failed'
+      toolDetails = { kind: 'status', code: 'failed' }
+      safeToolResult = null
+      resultSummary = null
+    }
+    if (status === 'succeeded' && !safeToolResult) {
+      status = 'failed'
+      toolDetails = { kind: 'status', code: 'failed' }
     }
     const durationMs = Math.max(0, Math.round(performance.now() - toolStartedAt))
     const toolCallId = await this.repository.saveToolCall({
@@ -560,9 +584,15 @@ export class DefaultAgentService implements AgentService {
       errorType: status === 'failed' ? 'tool_failed' : null,
     })
     const summary =
-      plan.toolCall.name === 'order_lookup'
-        ? chatCopy[context.input.locale].orderToolSummary
-        : chatCopy[context.input.locale].returnToolSummary
+      status === 'succeeded'
+        ? plan.toolCall.name === 'order_lookup'
+          ? chatCopy[context.input.locale].orderToolSummary
+          : chatCopy[context.input.locale].returnToolSummary
+        : status === 'not_found'
+          ? chatCopy[context.input.locale].orderNotFound
+          : status === 'email_mismatch'
+            ? chatCopy[context.input.locale].emailMismatch
+            : chatCopy[context.input.locale].unverifiedToolSummary
     yield event({
       type: 'tool',
       toolName: plan.toolCall.name,
@@ -582,7 +612,7 @@ export class DefaultAgentService implements AgentService {
       if (status === 'failed') {
         await this.createHandoff(context, {
           summary: redactQuery(context.input.message).slice(0, 300),
-          reason: 'tool_failed_after_retry',
+          reason: 'tool_failed',
           evidenceChunkIds: [],
           toolCallIds: [toolCallId],
           priority: 'high',
@@ -601,7 +631,7 @@ export class DefaultAgentService implements AgentService {
         usage: planning.usage,
         estimatedCostUsd: this.estimateCostUsd(planning.usage),
         providerRequestId: planning.providerRequestId,
-        errorType: status === 'failed' ? 'tool_failed_after_retry' : null,
+        errorType: status === 'failed' ? 'tool_failed' : null,
       })
       await this.recordUsage(context, planning.usage, null)
       yield stage(status === 'failed' ? 'handed_off' : 'completed', 'completed')
@@ -616,7 +646,23 @@ export class DefaultAgentService implements AgentService {
     }
     yield stage('calling_tool', 'completed')
 
-    const generation = yield* this.generateAnswer(context, plan.intent, [], safeToolResult)
+    // Identity verification and order facts are authoritative tool outcomes, not prose to improvise.
+    let generation: GenerationOutcome
+    if (verifiedOrderAnswer !== null) {
+      yield stage('generating', 'active')
+      yield event({ type: 'token', delta: verifiedOrderAnswer })
+      yield stage('generating', 'completed')
+      generation = {
+        answer: verifiedOrderAnswer,
+        citations: [],
+        usage: EMPTY_USAGE,
+        providerRequestId: null,
+        firstTokenLatencyMs: Math.round(performance.now() - context.startedAt),
+        errorType: null,
+      }
+    } else {
+      generation = yield* this.generateAnswer(context, plan.intent, [], safeToolResult)
+    }
     let answer = generation.answer
     let handedOff = false
     let errorType = generation.errorType

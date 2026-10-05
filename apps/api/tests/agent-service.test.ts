@@ -4,7 +4,7 @@ import type {
   OrderLookupToolResult,
   PublicChatRequest,
 } from '@grounddesk/shared'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { AgentRepository } from '../src/agent/repository.js'
 import { DefaultAgentService } from '../src/agent/service.js'
@@ -23,6 +23,7 @@ class MemoryAgentRepository implements AgentRepository {
   readonly handoffReasons: string[] = []
   readonly assistantMessages: Array<{ content: string; refused: boolean; handedOff: boolean }> = []
   conversationStatus: 'active' | 'handed_off' | 'closed' = 'active'
+  readonly userHistory: string[] = []
 
   getPublicWorkspace(): ReturnType<AgentRepository['getPublicWorkspace']> {
     return Promise.resolve({
@@ -55,8 +56,17 @@ class MemoryAgentRepository implements AgentRepository {
     })
   }
 
-  saveUserMessage(): Promise<string> {
+  saveUserMessage(_workspaceId: string, _conversationId: string, content: string): Promise<string> {
+    this.userHistory.push(content)
     return Promise.resolve('b0000000-0000-4000-8000-000000000001')
+  }
+
+  getRecentUserMessages(workspaceId: string, conversationId: string): Promise<string[]> {
+    return Promise.resolve(
+      workspaceId === WORKSPACE_ID && conversationId === CONVERSATION_ID
+        ? [...this.userHistory]
+        : [],
+    )
   }
 
   saveAssistantMessage(
@@ -228,6 +238,165 @@ const collect = async (
 }
 
 describe('single-agent workflow', () => {
+  const orderFixture: NonNullable<OrderLookupToolResult['order']> = {
+    orderNumber: 'GD-2026D019',
+    customerNameMasked: 'D*** C***',
+    customerEmailMasked: 'd***@example.com',
+    status: 'delivered',
+    orderedAt: '2026-08-24T09:30:00.000Z',
+    shippedAt: null,
+    deliveredAt: '2026-08-28T06:00:00.000Z',
+    carrier: 'ParcelNorth',
+    trackingNumberMasked: null,
+    totalCents: 18900,
+    currency: 'USD',
+    items: [
+      {
+        productId: DOCUMENT_ID,
+        sku: 'AVL-OR-H5-NVY',
+        model: 'Orbit H5',
+        name: 'Headphones',
+        quantity: 1,
+        opened: true,
+      },
+    ],
+  }
+  const orderService = () => {
+    const repository = new MemoryAgentRepository()
+    const provider = new StubGenerationProvider(['Cannot verify your email.'])
+    vi.spyOn(provider, 'plan').mockResolvedValue({
+      plan: {
+        intent: 'order_lookup',
+        normalizedQuestion: 'Check my order',
+        missingFields: ['orderNumber', 'email'],
+        toolCall: null,
+      },
+      providerRequestId: 'real-shape-fixture',
+      usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, available: true },
+    })
+    const tools = new StubToolService()
+    const lookup = vi
+      .spyOn(tools, 'lookupOrder')
+      .mockResolvedValue({ status: 'succeeded', order: orderFixture })
+    const service = new DefaultAgentService(
+      repository,
+      new StubKnowledgeService(),
+      tools,
+      provider,
+      {
+        dailyRequestLimit: 100,
+        dailyTokenLimit: 100000,
+        inputCostPerMillionUsd: 0.44,
+        outputCostPerMillionUsd: 1.32,
+      },
+    )
+    return { repository, provider, lookup, service }
+  }
+  it('repairs a no-call plan with complete credentials and binds prose to the verified result', async () => {
+    const { service, lookup, provider, repository } = orderService()
+    const result = await service.openPublicChat(
+      'avenlo-demo',
+      request('Check my order GD-2026D019, email demo.customer19@example.com.'),
+    )
+    const events = await collect(result.events)
+    expect(lookup).toHaveBeenCalledWith(
+      WORKSPACE_ID,
+      { orderNumber: 'GD-2026D019', email: 'demo.customer19@example.com' },
+      'en-US',
+    )
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool', status: 'succeeded' }))
+    expect(repository.assistantMessages[0]?.content).toContain('checkout email match')
+    expect(repository.assistantMessages[0]?.content).toContain('Delivered')
+    expect(provider.generationCalls).toBe(0)
+  })
+  it('asks for one missing field, then resolves user-only conversation context', async () => {
+    const { service, lookup, repository } = orderService()
+    await collect(
+      (await service.openPublicChat('avenlo-demo', request('Track my order GD-2026D019.'))).events,
+    )
+    expect(lookup).not.toHaveBeenCalled()
+    expect(repository.assistantMessages[0]?.content).toContain('checkout email')
+    expect(repository.assistantMessages[0]?.content).not.toContain('order number,')
+    await collect(
+      (
+        await service.openPublicChat(
+          'avenlo-demo',
+          request('My email is demo.customer19@example.com.'),
+        )
+      ).events,
+    )
+    expect(lookup).toHaveBeenCalledTimes(1)
+    expect(repository.assistantMessages[1]?.content).toContain('checkout email match')
+  })
+  it('does not read credential history until session ownership is verified', async () => {
+    const { service, repository, lookup } = orderService()
+    const history = vi.spyOn(repository, 'getRecentUserMessages')
+    vi.spyOn(repository, 'getOrCreateConversation').mockResolvedValue(null)
+    await expect(
+      service.openPublicChat('avenlo-demo', request('demo.customer19@example.com')),
+    ).rejects.toMatchObject({ code: 'conversation_forbidden' })
+    expect(history).not.toHaveBeenCalled()
+    expect(lookup).not.toHaveBeenCalled()
+  })
+  it('passes the verified workspace and conversation scope to credential history', async () => {
+    const { service, repository } = orderService()
+    const history = vi.spyOn(repository, 'getRecentUserMessages')
+    await service.openPublicChat('avenlo-demo', request('Track my order GD-2026D019.'))
+    expect(history).toHaveBeenCalledWith(WORKSPACE_ID, CONVERSATION_ID)
+  })
+  it.each(['not_found', 'email_mismatch', 'failed'] as const)(
+    'never claims verification on %s',
+    async (status) => {
+      const { service, lookup, repository } = orderService()
+      lookup.mockResolvedValue({ status, order: null })
+      const events = await collect(
+        (
+          await service.openPublicChat(
+            'avenlo-demo',
+            request('Track my order GD-2026D019, demo.customer19@example.com.'),
+          )
+        ).events,
+      )
+      expect(repository.assistantMessages[0]?.content).not.toContain('checkout email match')
+      expect(events).toContainEqual(expect.objectContaining({ type: 'tool', status }))
+      const toolEvent = events.find((event) => event.type === 'tool')
+      expect(toolEvent?.type === 'tool' ? toolEvent.summary : '').not.toContain(
+        'verified the order credentials',
+      )
+      expect(repository.handoffReasons.length).toBe(status === 'failed' ? 1 : 0)
+    },
+  )
+  it('converts an unexpected tool exception to an audited failure and confirmed handoff', async () => {
+    const { service, lookup, repository } = orderService()
+    lookup.mockRejectedValue(new Error('private database details'))
+    const events = await collect(
+      (
+        await service.openPublicChat(
+          'avenlo-demo',
+          request('Track my order GD-2026D019, demo.customer19@example.com.'),
+        )
+      ).events,
+    )
+    expect(events).toContainEqual(expect.objectContaining({ type: 'done', handedOff: true }))
+    expect(repository.assistantMessages[0]?.content).not.toContain('private database')
+  })
+  it('rejects a malformed success without actual order data', async () => {
+    const { service, lookup } = orderService()
+    lookup.mockResolvedValue({ status: 'succeeded', order: null })
+    const events = await collect(
+      (
+        await service.openPublicChat(
+          'avenlo-demo',
+          request('Track my order GD-2026D019, demo.customer19@example.com.'),
+        )
+      ).events,
+    )
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool', status: 'failed' }))
+    expect(events).toContainEqual(expect.objectContaining({ type: 'done', handedOff: true }))
+    expect(events).not.toContainEqual(
+      expect.objectContaining({ type: 'tool', status: 'succeeded' }),
+    )
+  })
   it('retrieves evidence, streams a cited answer, and persists the citation', async () => {
     const repository = new MemoryAgentRepository()
     const generation = new StubGenerationProvider()

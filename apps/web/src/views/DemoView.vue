@@ -2,6 +2,7 @@
 import { ArrowDown, ArrowLeft, ArrowUp, Headphones, RotateCcw } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 import type { FeedbackRating, Locale } from '@grounddesk/shared'
 
@@ -14,6 +15,7 @@ import { type ChatMessageView, useChatStore } from '../stores/chat'
 import { useShowcaseStore } from '../stores/showcase'
 
 const { locale, t } = useI18n()
+const route = useRoute()
 const chatStore = useChatStore()
 const showcaseStore = useShowcaseStore()
 const draft = ref('')
@@ -94,6 +96,8 @@ const resetConversation = async (): Promise<void> => {
   if (chatStore.isStreaming) return
   chatStore.resetConversation()
   reset()
+  activeView.value = 'chat'
+  returnFocus.value = null
   draft.value = ''
   await toBottom()
   composer.value?.focus()
@@ -119,7 +123,14 @@ const onTabKey = (event: KeyboardEvent): void => {
           : 'chat'
   document.getElementById(`demo-tab-${activeView.value}`)?.focus()
 }
-onMounted(() => void showcaseStore.loadProducts())
+onMounted(() => {
+  void showcaseStore.loadProducts()
+  const scenario = route.query.scenario
+  if (scenario === 'product' || scenario === 'order' || scenario === 'handoff') {
+    // Route scenarios are draft suggestions, never automatic model requests.
+    draft.value = t(`presentation.${scenario}Question`, { email: 'demo.customer19@example.com' })
+  }
+})
 </script>
 
 <template>
@@ -137,9 +148,9 @@ onMounted(() => void showcaseStore.loadProducts())
       <div class="demo-intro">
         <div>
           <p>{{ t('demo.eyebrow') }}</p>
-          <h1>{{ t('demo.experience.title') }}</h1>
+          <h1>{{ t('presentation.demo.title') }}</h1>
         </div>
-        <p>{{ t('demo.experience.description') }}</p>
+        <p>{{ t('presentation.demo.description') }}</p>
       </div>
       <div
         class="demo-mobile-tabs"

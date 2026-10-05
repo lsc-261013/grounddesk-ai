@@ -160,6 +160,15 @@ class PostgresAgentRepository implements AgentRepository {
     return id
   }
 
+  async getRecentUserMessages(workspaceId: string, conversationId: string): Promise<string[]> {
+    const rows = await this.database<{ content: string }[]>`
+      select content from public.messages
+      where workspace_id = ${workspaceId} and conversation_id = ${conversationId} and role = 'user'
+      order by created_at desc, id desc limit 8
+    `
+    return rows.reverse().map((row) => row.content)
+  }
+
   async saveAssistantMessage(input: SaveAssistantMessageInput): Promise<string> {
     const rows = await this.database<{ id: string }[]>`
       insert into public.messages (

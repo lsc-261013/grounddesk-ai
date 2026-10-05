@@ -1,4 +1,7 @@
+import { randomUUID } from 'node:crypto'
+import { orderLookupToolInputSchema } from '@grounddesk/shared'
 import type { AgentPlan } from '../generation/types.js'
+import { orderCredentials, requestsOrderLookup } from './order-context.js'
 
 export const shouldUseModelPlanner = (message: string): boolean =>
   /GD-[A-Z0-9]{8}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(message) ||
@@ -34,6 +37,21 @@ const reasonFrom = (
 }
 
 export const constrainAgentPlan = (plan: AgentPlan, message: string): AgentPlan => {
+  if (requestsOrderLookup(message)) {
+    const credentials = orderCredentials(message)
+    const parsed = orderLookupToolInputSchema.safeParse(credentials)
+    return {
+      intent: 'order_lookup',
+      normalizedQuestion: message,
+      missingFields: [
+        ...(credentials.orderNumber ? [] : ['orderNumber']),
+        ...(credentials.email ? [] : ['email']),
+      ],
+      toolCall: parsed.success
+        ? { id: randomUUID(), name: 'order_lookup', input: parsed.data }
+        : null,
+    }
+  }
   if (plan.intent === 'human_handoff') {
     return {
       intent: 'knowledge_answer',
@@ -44,24 +62,17 @@ export const constrainAgentPlan = (plan: AgentPlan, message: string): AgentPlan 
   }
   if (plan.intent === 'knowledge_answer') return plan
 
-  const orderNumber = orderNumberFrom(message)
-  const email = emailFrom(message)
   if (plan.intent === 'order_lookup') {
-    const missingFields = [...(orderNumber ? [] : ['orderNumber']), ...(email ? [] : ['email'])]
-    if (!plan.toolCall || !orderNumber || !email) {
-      return {
-        ...plan,
-        missingFields: [...new Set([...plan.missingFields, ...missingFields])],
-        toolCall: null,
-      }
-    }
     return {
-      ...plan,
+      intent: 'knowledge_answer',
+      normalizedQuestion: message,
       missingFields: [],
-      toolCall: { ...plan.toolCall, input: { orderNumber, email } },
+      toolCall: null,
     }
   }
 
+  const orderNumber = orderNumberFrom(message)
+  const email = emailFrom(message)
   const opened = openedFrom(message)
   const reason = reasonFrom(message)
   const missingFields = [

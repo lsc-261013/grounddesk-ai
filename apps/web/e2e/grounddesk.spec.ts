@@ -17,10 +17,8 @@ test('landing page is bilingual, reduced-motion safe, and responsive', async ({ 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
 
-  await expect(
-    page.getByRole('heading', { name: '让客服回答有依据，让复杂问题有人接手。' }),
-  ).toBeVisible()
-  await expect(page.getByText('界面示例 · 不是实时生成', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '让答案有依据。 让服务有后续。' })).toBeVisible()
+  await expect(page.getByText('已验证流程的示例 · 非实时回答', { exact: true })).toBeVisible()
   await expect(page.locator('.landing-scenario-grid article')).toHaveCount(3)
   if (process.env.VITE_AUTHOR_NAME && process.env.VITE_CONTACT_URL) {
     await expect(page.getByText(`个人作品 · ${process.env.VITE_AUTHOR_NAME}`)).toBeVisible()
@@ -31,7 +29,7 @@ test('landing page is bilingual, reduced-motion safe, and responsive', async ({ 
   }
   await page.getByRole('button', { name: 'EN', exact: true }).click()
   await expect(
-    page.getByRole('heading', { name: 'Grounded answers. Human help when it matters.' }),
+    page.getByRole('heading', { name: 'Support answers. You can verify.' }),
   ).toBeVisible()
   await expect
     .poll(() => page.evaluate(() => window.localStorage.getItem('grounddesk-locale')))

@@ -5,7 +5,7 @@ import { createServer, type ServerResponse } from 'node:http'
 import { expect, test, type Page } from '@playwright/test'
 
 const screenshotDir = fileURLToPath(
-  new URL('../../../docs/images/demo-round-one/', import.meta.url),
+  new URL('../../../docs/images/demo-round-two/', import.meta.url),
 )
 const source = (number = 1) => ({
   ordinal: number,
@@ -328,7 +328,7 @@ test('initial layout, keyboard focus, reduced motion and English remain usable a
   }
   await page.getByRole('button', { name: 'EN', exact: true }).click()
   await expect(
-    page.getByRole('heading', { name: 'A clear question. A verifiable answer.' }),
+    page.getByRole('heading', { name: 'Start with a question. Check the result.' }),
   ).toBeVisible()
   await widths(page)
   await page.reload()
