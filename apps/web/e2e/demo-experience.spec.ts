@@ -5,7 +5,7 @@ import { createServer, type ServerResponse } from 'node:http'
 import { expect, test, type Page } from '@playwright/test'
 
 const screenshotDir = fileURLToPath(
-  new URL('../../../docs/images/demo-round-three/', import.meta.url),
+  new URL('../../../docs/images/demo-round-four/', import.meta.url),
 )
 const source = (number = 1) => ({
   ordinal: number,

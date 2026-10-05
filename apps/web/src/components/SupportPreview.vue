@@ -17,8 +17,9 @@ const { t } = useI18n()
 const scene = ref<'product' | 'order' | 'handoff'>('product')
 const options = ['product', 'order', 'handoff'] as const
 const stage = ref<HTMLElement | null>(null)
-const { entered, inView } = useViewportEntrance(stage)
+const { entered } = useViewportEntrance(stage)
 const replay = ref(0)
+const motion = ref<'entrance' | 'switch' | 'replay'>('entrance')
 const sceneIndex = computed(() => options.indexOf(scene.value))
 const question = computed(() =>
   t(`presentation.${scene.value}Question`, { email: 'demo.customer19@example.com' }),
@@ -27,7 +28,13 @@ const icon = computed(() =>
   scene.value === 'product' ? BookOpenCheck : scene.value === 'order' ? PackageCheck : TicketCheck,
 )
 const selectScene = (option: typeof scene.value): void => {
+  if (scene.value === option) return
+  motion.value = 'switch'
   scene.value = option
+  replay.value++
+}
+const replayScene = (): void => {
+  motion.value = 'replay'
   replay.value++
 }
 const onTabKey = (event: KeyboardEvent): void => {
@@ -51,7 +58,8 @@ const onTabKey = (event: KeyboardEvent): void => {
   <section
     ref="stage"
     class="support-preview"
-    :class="{ 'has-entered': entered, 'is-paused': !inView }"
+    :class="{ 'has-entered': entered }"
+    :data-motion="motion"
     :aria-label="t('landing.preview.ariaLabel')"
   >
     <header class="support-preview__header">
@@ -95,21 +103,24 @@ const onTabKey = (event: KeyboardEvent): void => {
       :aria-labelledby="`preview-${scene}`"
       :data-scene="scene"
     >
-      <div class="preview-route" aria-hidden="true">
-        <span>01</span><i></i><span>02</span><i></i><span>03</span>
-      </div>
-      <div class="preview-object" aria-hidden="true">
-        <svg v-if="scene !== 'handoff'" viewBox="0 0 320 240">
-          <use :href="`/products.svg#${scene === 'product' ? 'linkcore-c240' : 'orbit-h5'}`" />
-        </svg>
-        <TicketCheck v-else :size="68" :stroke-width="1" />
-        <span>{{
-          scene === 'product' ? 'LINKCORE C240' : scene === 'order' ? 'GD-2026D019' : 'HUMAN REVIEW'
-        }}</span>
-      </div>
-      <div class="preview-question">
-        <small>{{ t('presentation.question') }}</small>
-        <p>{{ question }}</p>
+      <div class="preview-question-row">
+        <div class="preview-object" aria-hidden="true">
+          <svg v-if="scene !== 'handoff'" viewBox="0 0 320 240">
+            <use :href="`/products.svg#${scene === 'product' ? 'linkcore-c240' : 'orbit-h5'}`" />
+          </svg>
+          <TicketCheck v-else :size="68" :stroke-width="1" />
+          <span>{{
+            scene === 'product'
+              ? 'LINKCORE C240'
+              : scene === 'order'
+                ? 'GD-2026D019'
+                : 'HUMAN REVIEW'
+          }}</span>
+        </div>
+        <div class="preview-question">
+          <small>{{ t('presentation.question') }}</small>
+          <p>{{ question }}</p>
+        </div>
       </div>
       <div class="preview-response">
         <span
@@ -147,7 +158,7 @@ const onTabKey = (event: KeyboardEvent): void => {
           type="button"
           class="preview-replay"
           :aria-label="t('presentation.replay')"
-          @click="replay++"
+          @click="replayScene"
         >
           <RotateCcw :size="14" />{{ t('presentation.replay') }}
         </button>

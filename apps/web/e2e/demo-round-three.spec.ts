@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
 const screenshotDir = fileURLToPath(
-  new URL('../../../docs/images/demo-round-three/', import.meta.url),
+  new URL('../../../docs/images/demo-round-four/', import.meta.url),
 )
 test.use({ video: { mode: 'on', size: { width: 1440, height: 900 } } })
 const citation = (ordinal: number, answer: number) => ({
@@ -136,89 +136,4 @@ test('aggregate and exact entries open, retain, locate and re-signal the right a
     page.getByRole('button', { name: '查看 2 条来源', exact: true }).first(),
   ).toBeFocused()
   expect(await positions()).toEqual(mobileBefore)
-})
-
-test.describe('recorded semantic hero motion', () => {
-  test.afterEach(async ({ page, context }) => {
-    const video = page.video()
-    await context.close()
-    await video?.saveAs(`${screenshotDir}/hero-motion-1440x900.webm`)
-  })
-  test('staggered entrance, continuous selection, replay, hover/press, one-shot reveal and static reduced motion', async ({
-    page,
-  }) => {
-    await mkdir(screenshotDir, { recursive: true })
-    await page.setViewportSize({ width: 1440, height: 900 })
-    let requests = 0
-    const errors: string[] = []
-    page.on('pageerror', (error) => errors.push(error.message))
-    await page.route('**/chat/stream', (route) => {
-      requests++
-      return route.abort()
-    })
-    await page.goto('/')
-    const stage = page.locator('.support-preview')
-    await expect(stage).toHaveClass(/has-entered/)
-    await expect(page.getByRole('link', { name: '体验 AI 客服', exact: true })).toBeVisible()
-    const ready = () =>
-      expect
-        .poll(() => page.locator('.preview-proof').evaluate((e) => getComputedStyle(e).opacity))
-        .toBe('1')
-    await ready()
-    const height = await stage.evaluate((e) => e.getBoundingClientRect().height)
-    await page.getByRole('tab', { name: '订单查询', exact: true }).click()
-    const animations = await page.locator('.preview-scene').evaluate((e) =>
-      e.getAnimations({ subtree: true }).map((animation) => ({
-        name: (animation as CSSAnimation).animationName,
-        delay: animation.effect!.getTiming().delay,
-      })),
-    )
-    expect(animations).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'preview-question-in', delay: 0 }),
-        expect.objectContaining({ name: 'preview-answer-in', delay: 300 }),
-        expect.objectContaining({ name: 'preview-source-in', delay: 700 }),
-      ]),
-    )
-    await ready()
-    expect(await stage.evaluate((e) => e.getBoundingClientRect().height)).toBe(height)
-    await expect(page.locator('.preview-tab-indicator')).toHaveCSS(
-      'transform',
-      /matrix\(1, 0, 0, 1, (?!0,)/,
-    )
-    await page.getByRole('tab', { name: '人工接管', exact: true }).click()
-    await ready()
-    await page.screenshot({ path: `${screenshotDir}/after-home-handoff-1440x900.png` })
-    await page.getByRole('tab', { name: '产品咨询', exact: true }).press('Home')
-    await page.getByRole('button', { name: '重播流程', exact: true }).click()
-    await ready()
-    await page.screenshot({ path: `${screenshotDir}/after-home-1440x900.png` })
-    const cta = page.getByRole('link', { name: '体验 AI 客服', exact: true })
-    await cta.hover()
-    await expect(cta).toHaveCSS('background-color', 'rgb(144, 235, 201)')
-    await page.mouse.down()
-    await page.screenshot({ path: `${screenshotDir}/after-home-cta-pressed.png` })
-    await page.mouse.move(12, 12)
-    await page.mouse.up()
-    await page.locator('.landing-scenario-grid').scrollIntoViewIfNeeded()
-    await expect(page.locator('.landing-workbench__inner')).toHaveClass(/is-revealed/)
-    await page.waitForTimeout(750)
-    await page.locator('.landing-evaluation').scrollIntoViewIfNeeded()
-    await expect(stage).toHaveClass(/is-paused/)
-    await page.locator('.landing-hero').scrollIntoViewIfNeeded()
-    await expect(stage).not.toHaveClass(/is-paused/)
-    expect(
-      await page
-        .locator('.landing-workbench__inner')
-        .evaluate(
-          (e) => e.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
-        ),
-    ).toBe(0)
-    await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.getByRole('tab', { name: '订单查询', exact: true }).click()
-    await expect(page.locator('.preview-proof')).toHaveCSS('opacity', '1')
-    await expect(page.locator('.preview-proof')).toHaveCSS('animation-name', 'none')
-    expect(requests).toBe(0)
-    expect(errors).toEqual([])
-  })
 })

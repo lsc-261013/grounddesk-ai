@@ -1,9 +1,14 @@
+import { mkdir } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { expect, test, type Page } from '@playwright/test'
 
 import { DEMO_LOGIN_PASSWORD } from '@grounddesk/shared'
 
 const ADMIN_EMAIL = 'admin@demo.grounddesk.app'
 const AGENT_EMAIL = 'agent@demo.grounddesk.app'
+const screenshotDir = fileURLToPath(
+  new URL('../../../docs/images/demo-round-four/', import.meta.url),
+)
 
 const login = async (page: Page, email: string): Promise<void> => {
   await page.goto('/login')
@@ -48,7 +53,12 @@ test('landing page is bilingual, reduced-motion safe, and responsive', async ({ 
 })
 
 test('administrator can refresh protected pages and inspect operations data', async ({ page }) => {
+  await mkdir(screenshotDir, { recursive: true })
+  await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, ADMIN_EMAIL)
+  await expect(page.locator('.metric-card--lead strong')).toBeVisible()
+  await expect(page.locator('.role-chip')).toHaveText('admin')
+  await page.screenshot({ path: `${screenshotDir}/live-admin-1440x900.png` })
 
   await page.goto('/console/orders')
   await expect(page.getByText('GD-2026D019', { exact: true })).toBeVisible()
@@ -77,10 +87,18 @@ test('administrator can refresh protected pages and inspect operations data', as
   await page.getByRole('button', { name: '退出登录', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('button', { name: '安全登录', exact: true })).toBeVisible()
+  await page.goto('/console/settings')
+  await expect(page).toHaveURL(/\/login\?redirect=/)
+  await expect(page.getByRole('alert')).toHaveCount(0)
 })
 
 test('agent navigation and direct-route states respect role boundaries', async ({ page }) => {
+  await mkdir(screenshotDir, { recursive: true })
+  await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, AGENT_EMAIL)
+  await expect(page.locator('.metric-card--lead strong')).toBeVisible()
+  await expect(page.locator('.role-chip')).toHaveText('agent')
+  await page.screenshot({ path: `${screenshotDir}/live-agent-1440x900.png` })
 
   const navigation = page.getByRole('navigation', { name: '控制台导航', exact: true })
   await expect(navigation.getByRole('link', { name: '订单', exact: true })).toBeVisible()
@@ -95,6 +113,12 @@ test('agent navigation and direct-route states respect role boundaries', async (
 
   await page.goto('/console/tickets')
   await expect(page.getByRole('heading', { name: '人工工单队列', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: '人工工单队列', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await page.goto('/console/tickets')
+  await expect(page).toHaveURL(/\/login\?redirect=/)
 })
 
 test('live demo cites knowledge, calls tools, and completes human handoff', async ({ page }) => {

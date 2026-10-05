@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
-const outputDir = fileURLToPath(new URL('../../../docs/images/demo-round-three/', import.meta.url))
+const outputDir = fileURLToPath(new URL('../../../docs/images/demo-round-four/', import.meta.url))
 
 test('all scenario cards stay readable without collision in both languages and four widths', async ({
   page,
@@ -13,7 +13,7 @@ test('all scenario cards stay readable without collision in both languages and f
   for (const locale of ['zh', 'en']) {
     if (locale === 'en') await page.getByRole('button', { name: 'EN', exact: true }).click()
     for (const width of [1440, 1280, 390, 320]) {
-      await page.setViewportSize({ width, height: width < 500 ? 844 : 900 })
+      await page.setViewportSize({ width, height: width < 500 ? 844 : width === 1280 ? 720 : 900 })
       const tabs = page.locator('.preview-tabs button')
       let previousHeight = 0
       for (let index = 0; index < 3; index++) {
@@ -30,6 +30,17 @@ test('all scenario cards stay readable without collision in both languages and f
           }))
           return {
             cards,
+            textFits: [
+              ...document.querySelectorAll(
+                '.preview-response > p,.preview-question > p,.preview-proof > blockquote,.preview-proof > small',
+              ),
+            ].every(
+              (e) =>
+                e.getBoundingClientRect().bottom <=
+                (e.closest('.preview-question-row') ?? e.parentElement)!.getBoundingClientRect()
+                  .bottom -
+                  5,
+            ),
             footer: document.querySelector('.preview-footer')!.getBoundingClientRect().top,
             height: document.querySelector('.support-preview')!.getBoundingClientRect().height,
             width: innerWidth,
@@ -37,6 +48,7 @@ test('all scenario cards stay readable without collision in both languages and f
           }
         })
         expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width)
+        expect(layout.textFits).toBe(true)
         for (let card = 0; card < 2; card++)
           expect(layout.cards[card]!.bottom + 8).toBeLessThanOrEqual(layout.cards[card + 1]!.top)
         expect(layout.cards[2]!.bottom + 8).toBeLessThanOrEqual(layout.footer)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowRight, KeyRound, LockKeyhole, ShieldCheck } from 'lucide-vue-next'
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -11,6 +11,7 @@ const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const credentials = reactive({ email: '', password: '' })
+onMounted(() => authStore.clearLoginError())
 
 const submit = async (): Promise<void> => {
   const signedIn = await authStore.signIn(credentials.email, credentials.password)
@@ -65,14 +66,21 @@ const submit = async (): Promise<void> => {
       <p v-if="!isSupabaseConfigured" class="form-message form-message--warning" role="alert">
         {{ t('auth.notConfigured') }}
       </p>
-      <p v-else-if="authStore.error" class="form-message" role="alert">
-        {{ t('auth.signInError') }}
+      <p v-else-if="authStore.loginError" class="form-message" role="alert">
+        {{ t(`auth.errors.${authStore.loginError}`) }}
+      </p>
+      <p
+        v-else-if="authStore.restoreError"
+        class="form-message form-message--warning"
+        role="status"
+      >
+        {{ t('auth.restoreError') }}
       </p>
 
       <button
         class="primary-button"
         type="submit"
-        :disabled="authStore.isSubmitting || !isSupabaseConfigured"
+        :disabled="authStore.isSubmitting || authStore.isInitializing || !isSupabaseConfigured"
       >
         <span>{{ authStore.isSubmitting ? t('auth.signingIn') : t('auth.signIn') }}</span>
         <ArrowRight :size="17" aria-hidden="true" />

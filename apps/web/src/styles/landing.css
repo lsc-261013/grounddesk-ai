@@ -13,10 +13,10 @@
 .landing-hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
   align-items: center;
   gap: clamp(32px, 4vw, 64px);
-  padding: 56px 0 72px;
+  padding: 40px 0 48px;
 }
 .landing-hero__stage {
   position: relative;
@@ -25,12 +25,11 @@
 .landing-hero__stage::before {
   content: '';
   position: absolute;
-  inset: -20px 20px 20px -20px;
-  border: 1px solid #2c4538;
-  border-radius: 20px;
-  transform: rotate(-3deg);
+  inset: 48px -18px -16px 56px;
+  border-right: 1px solid #315c49;
+  border-bottom: 1px solid #315c49;
+  border-radius: 0 0 16px 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at 30% 10%, #22453355, transparent 70%);
 }
 .landing-hero__copy .landing-eyebrow {
   animation: landing-enter 500ms ease-out both;
@@ -467,8 +466,7 @@
 }
 @media (max-width: 767px) {
   .landing-hero__stage::before {
-    inset: -10px 8px 14px -7px;
-    transform: rotate(-2deg);
+    inset: 36px -8px -10px 48px;
   }
   .landing-hero,
   .landing-section,

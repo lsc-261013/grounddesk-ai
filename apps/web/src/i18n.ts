@@ -259,6 +259,18 @@ export const i18n = createI18n({
         signingIn: '正在验证…',
         signOut: '退出登录',
         signInError: '登录失败，请检查账号、密码或服务连接。',
+        restoreError: '上次会话暂未恢复。你可以重新登录；这不代表账号或密码错误。',
+        errors: {
+          configuration: '登录配置暂不可用，请联系维护者。',
+          credentials: '邮箱或密码不正确，请核对后重试。',
+          provider_connection: '暂时无法连接登录服务，请稍后重试。尚未完成账号验证。',
+          provider_rejected: '登录服务未接受此次请求，请稍后重试或联系维护者。',
+          session_expired: '账号验证已完成，但工作区会话校验未通过。请重试；持续失败请联系维护者。',
+          workspace_connection:
+            '账号验证已完成，但暂时无法连接工作区服务。请稍后重试，无需修改密码。',
+          workspace_rejected: '账号验证已完成，但当前无法访问工作区，请联系管理员。',
+          workspace_response: '账号验证已完成，但工作区返回了无法读取的响应，请联系维护者。',
+        },
         notConfigured: 'Supabase 前端公开配置尚未生效。',
         needAccount: '创建自己的 GroundDesk 工作区',
         haveAccount: '已有账号？返回登录',
@@ -891,6 +903,24 @@ export const i18n = createI18n({
         signingIn: 'Verifying…',
         signOut: 'Sign out',
         signInError: 'Sign-in failed. Check the account, password, or service connection.',
+        restoreError:
+          'Your previous session could not be restored. You can sign in again; this does not mean your credentials are wrong.',
+        errors: {
+          configuration: 'Sign-in configuration is unavailable. Contact the maintainer.',
+          credentials: 'The email or password is incorrect. Check them and try again.',
+          provider_connection:
+            'The sign-in service cannot be reached. Try again later. Credentials have not been verified.',
+          provider_rejected:
+            'The sign-in service did not accept this request. Try again later or contact the maintainer.',
+          session_expired:
+            'Your account was verified, but workspace session validation failed. Retry or contact the maintainer.',
+          workspace_connection:
+            'Your account was verified, but the workspace service is unavailable. Retry later; you do not need to change your password.',
+          workspace_rejected:
+            'Your account was verified, but workspace access is unavailable. Contact your administrator.',
+          workspace_response:
+            'Your account was verified, but the workspace response could not be read. Contact the maintainer.',
+        },
         notConfigured: 'The public Supabase web configuration is not available.',
         needAccount: 'Create your own GroundDesk workspace',
         haveAccount: 'Already have an account? Return to sign in',
