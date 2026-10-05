@@ -22,6 +22,8 @@ flowchart LR
 - API：https://grounddesk-api-lsc.onrender.com
 - Health：https://grounddesk-api-lsc.onrender.com/health
 
+以上地址与线上报告来自历史部署记录，不能证明 2026-10-06 的首页/问答改版已上线。本次本地验证和截图见 [当前交互交接](demo-round-four-handoff.md)；后续发布后需要重新做线上检查，不继承历史 Lighthouse 或模型评测数字。
+
 ## 1. 部署前门禁
 
 在干净工作区执行：
@@ -168,9 +170,32 @@ pnpm test:e2e
 - Render Static Site 静态资源带内容 Hash，可以回滚到上一成功 Deployment；API 回滚前确认新迁移是否向后兼容。
 - `/health` 正常但聊天失败：检查 Provider 状态、Render 出站网络和用量额度。
 - 登录成功但 API 返回 401：检查 Supabase 项目是否一致，以及浏览器 Access Token 是否来自同一 Project URL。
+- 登录已认证但工作区加载失败：区分 token/成员问题与服务端访问认证服务失败；网络/供应商不可用应返回 503，不提示用户修改密码。
 - 浏览器出现 CORS：`WEB_ORIGIN` 必须与地址栏 Origin 完全一致。
 - 数据库连接失败：重新复制连接 URI，并检查特殊字符编码、IPv4/Pooler 选择和 Supabase 网络限制。
 - 前端刷新子路由 404：确认 Render Static Site 已同步仓库中的 `/* → /index.html` Rewrite。
+
+### 6.1 发布分支与自动部署
+
+`render.yaml` 的两个服务均设置 `autoDeployTrigger: commit`。真正部署哪一条分支由服务/Blueprint 设置决定；推送受跟踪分支可能触发构建与上线。仅备份源码时推送非部署分支；更新主分支前先确认是否授权同时发布，不自行关闭或修改服务的自动部署设置。
+
+本地门禁成功不等于部署成功，也不等于公开 AI 链路已验收。发布后应核对两个服务的 Deployment 状态与提交 SHA，然后从公开入口实际检查登录、问答引用、订单工具和接管。没有实际完成的检查应保留为未验证。
+
+### 6.2 Windows 本地认证连接诊断
+
+2026-10-06 的真实故障发生在浏览器密码认证之后：Supabase 200，GroundDesk session 401；Node 获取公开 JWKS 时 ECONNRESET，而同机器系统 HTTP 请求成功。前后端项目 URL/key 一致，不是公开演示密码过期。用本机已有 loopback 代理对照后 JWKS/claims 和业务会话成功，两种角色及跨 Workspace 边界恢复。
+
+网络能直连时继续 `pnpm dev`。只有本机已启用 loopback HTTP 代理且 Node 需要采用它时，才在两个项目根目录终端分别执行：
+
+```powershell
+# Terminal 1
+powershell -NoProfile -File .\scripts\dev-api-with-system-proxy.ps1
+
+# Terminal 2
+pnpm dev:web
+```
+
+该可选脚本需要 Node 22.21+ 或 24.5+，检查 8787 未占用，只为 API 进程树配置现有代理；不写注册表、Git 全局设置或 `.env`，不关闭 TLS 验证，也不把 localhost 代理地址部署到 Render。不要用重置密码、重建账号、关闭 JWT/RLS 来掩盖网络错误。
 
 ## 7. 密钥轮换
 
