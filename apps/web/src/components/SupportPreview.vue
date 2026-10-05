@@ -5,7 +5,6 @@ import {
   Check,
   ChevronRight,
   PackageCheck,
-  RotateCcw,
   TicketCheck,
 } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
@@ -19,7 +18,7 @@ const options = ['product', 'order', 'handoff'] as const
 const stage = ref<HTMLElement | null>(null)
 const { entered } = useViewportEntrance(stage)
 const replay = ref(0)
-const motion = ref<'entrance' | 'switch' | 'replay'>('entrance')
+const motion = ref<'entrance' | 'replay'>('entrance')
 const sceneIndex = computed(() => options.indexOf(scene.value))
 const question = computed(() =>
   t(`presentation.${scene.value}Question`, { email: 'demo.customer19@example.com' }),
@@ -28,13 +27,8 @@ const icon = computed(() =>
   scene.value === 'product' ? BookOpenCheck : scene.value === 'order' ? PackageCheck : TicketCheck,
 )
 const selectScene = (option: typeof scene.value): void => {
-  if (scene.value === option) return
-  motion.value = 'switch'
-  scene.value = option
-  replay.value++
-}
-const replayScene = (): void => {
   motion.value = 'replay'
+  scene.value = option
   replay.value++
 }
 const onTabKey = (event: KeyboardEvent): void => {
@@ -152,17 +146,7 @@ const onTabKey = (event: KeyboardEvent): void => {
       </div>
     </div>
     <footer class="preview-footer">
-      <div>
-        <p>{{ t('presentation.exampleNote') }}</p>
-        <button
-          type="button"
-          class="preview-replay"
-          :aria-label="t('presentation.replay')"
-          @click="replayScene"
-        >
-          <RotateCcw :size="14" />{{ t('presentation.replay') }}
-        </button>
-      </div>
+      <p>{{ t('presentation.exampleNote') }}</p>
       <RouterLink :to="{ path: '/demo', query: { scenario: scene } }"
         >{{ t('presentation.tryScenario') }}<ArrowUpRight :size="17"
       /></RouterLink>

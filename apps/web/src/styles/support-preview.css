@@ -243,34 +243,11 @@
   padding: 12px 24px 16px;
   border-top: 1px solid #344e3e;
 }
-.preview-footer > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: 12px;
-}
 .preview-footer p {
   margin: 0;
-  max-width: 320px;
   font-size: 10px;
   line-height: 1.7;
   color: #b3c9ba;
-}
-.preview-replay {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  padding: 0;
-  min-height: 28px;
-  border: 0;
-  background: none;
-  color: #b4d2bd;
-  white-space: nowrap;
-  font-size: 10px;
-  cursor: pointer;
-}
-.preview-replay:hover {
-  color: #fff;
 }
 .preview-footer a {
   display: flex;
@@ -300,9 +277,6 @@
 .support-preview[data-motion='replay'] .preview-proof {
   animation: preview-source-in 550ms 380ms ease-out both;
 }
-.support-preview[data-motion='switch'] .preview-scene {
-  animation: preview-switch-in 180ms ease-out;
-}
 @keyframes preview-question-in {
   from {
     opacity: 0.4;
@@ -327,16 +301,6 @@
   from {
     opacity: 0.25;
     transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes preview-switch-in {
-  from {
-    opacity: 0.7;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;

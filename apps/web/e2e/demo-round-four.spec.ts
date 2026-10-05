@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 const directory = fileURLToPath(new URL('../../../docs/images/demo-round-four/', import.meta.url))
 test.use({ video: { mode: 'on', size: { width: 1440, height: 900 } } })
 
-test('scene switches stay readable with the pointer inside; replay and scroll do not freeze content', async ({
+test('each scene tab replays its workflow, including repeat clicks, without freezing under the pointer', async ({
   page,
   context,
 }) => {
@@ -28,17 +28,33 @@ test('scene switches stay readable with the pointer inside; replay and scroll do
     await expect(page.locator('.preview-response > p')).toBeVisible()
   }
   await ready()
+  await expect(page.getByRole('button', { name: '重播流程', exact: true })).toHaveCount(0)
   const size = await stage.boundingBox()
-  await page.getByRole('tab', { name: '订单查询', exact: true }).click()
-  await page.locator('.preview-response').hover()
-  await ready()
-  await page.getByRole('tab', { name: '产品咨询', exact: true }).click()
-  await page.locator('.preview-question').hover()
-  await ready()
-  await expect(stage).toHaveAttribute('data-motion', 'switch')
-  await expect(page.locator('.preview-response')).toContainText('18 个月')
-  await page.getByRole('tab', { name: '产品咨询', exact: true }).click()
-  await ready()
+  const playScene = async (name: string, scene: string, answer: string) => {
+    const previousScene = await page.locator('.preview-scene').elementHandle()
+    await page.getByRole('tab', { name, exact: true }).click()
+    expect(await previousScene.evaluate((element) => element.isConnected)).toBe(false)
+    await expect(stage).toHaveAttribute('data-motion', 'replay')
+    await page.locator('.preview-response').hover()
+    const animations = await page.locator('.preview-scene').evaluate((element) =>
+      element.getAnimations({ subtree: true }).map((animation) => ({
+        state: animation.playState,
+        name: (animation as CSSAnimation).animationName,
+      })),
+    )
+    expect(animations.map((animation) => animation.name)).toEqual(
+      expect.arrayContaining(['preview-question-in', 'preview-answer-in', 'preview-source-in']),
+    )
+    expect(animations.some((animation) => animation.state === 'paused')).toBe(false)
+    await ready()
+    await expect(page.locator('.preview-scene')).toHaveAttribute('data-scene', scene)
+    await expect(page.locator('.preview-response')).toContainText(answer)
+  }
+  await playScene('产品咨询', 'product', '18 个月')
+  await playScene('订单查询', 'order', '订单号与下单邮箱匹配后')
+  await playScene('人工接管', 'handoff', '资料不足')
+  await playScene('产品咨询', 'product', '18 个月')
+  await playScene('产品咨询', 'product', '18 个月')
   for (const scene of ['订单查询', '人工接管', '产品咨询', '人工接管', '订单查询'])
     await page.getByRole('tab', { name: scene, exact: true }).click()
   await page.locator('.preview-response').hover()
@@ -46,18 +62,7 @@ test('scene switches stay readable with the pointer inside; replay and scroll do
   await expect(page.locator('.preview-scene')).toHaveAttribute('data-scene', 'order')
   await expect(page.locator('.preview-response')).toContainText('订单号与下单邮箱匹配后')
   expect((await stage.boundingBox())?.height).toBe(size?.height)
-  await page.getByRole('button', { name: '重播流程', exact: true }).click()
-  await page.locator('.preview-response').hover()
-  const running = await page
-    .locator('.preview-scene')
-    .evaluate((e) =>
-      e
-        .getAnimations({ subtree: true })
-        .map((a) => ({ state: a.playState, name: (a as CSSAnimation).animationName })),
-    )
-  expect(running.some((a) => a.name === 'preview-source-in')).toBe(true)
-  expect(running.some((a) => a.state === 'paused')).toBe(false)
-  await ready()
+  await playScene('订单查询', 'order', '订单号与下单邮箱匹配后')
   const primaryCta = page.getByRole('link', { name: '体验 AI 客服', exact: true })
   await primaryCta.hover()
   await expect(primaryCta).toHaveCSS('background-color', 'rgb(144, 235, 201)')
