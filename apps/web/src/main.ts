@@ -8,6 +8,7 @@ import './styles/auth.css'
 import './styles/console.css'
 import './styles/demo.css'
 import './styles/landing.css'
+import './styles/support-preview.css'
 import './styles/main.css'
 import './styles/operations.css'
 

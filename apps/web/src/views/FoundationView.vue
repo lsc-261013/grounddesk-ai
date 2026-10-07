@@ -10,14 +10,17 @@ import {
   ShieldCheck,
   TicketCheck,
 } from 'lucide-vue-next'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import SupportPreview from '../components/SupportPreview.vue'
+import { useLandingReveal } from '../composables/useLandingReveal'
 import { useShowcaseStore } from '../stores/showcase'
 
 const { locale, t } = useI18n()
 const showcaseStore = useShowcaseStore()
+const pageElement = ref<HTMLElement | null>(null)
+useLandingReveal(pageElement)
 const evaluation = computed(() => showcaseStore.evaluation)
 const contactUrl = import.meta.env.VITE_CONTACT_URL?.trim()
 const githubUrl = import.meta.env.VITE_GITHUB_URL?.trim()
@@ -26,12 +29,15 @@ onMounted(() => void showcaseStore.loadEvaluation())
 </script>
 
 <template>
-  <main class="landing-page">
+  <main ref="pageElement" class="landing-page">
     <section class="landing-hero">
       <div class="landing-hero__copy">
         <p class="landing-eyebrow"><span></span>{{ t('landing.hero.eyebrow') }}</p>
-        <h1>{{ t('landing.hero.title') }}</h1>
-        <p class="landing-hero__lead">{{ t('landing.hero.description') }}</p>
+        <h1>
+          <span>{{ t('presentation.titleFirst') }}</span
+          ><span>{{ t('presentation.titleSecond') }}</span>
+        </h1>
+        <p class="landing-hero__lead">{{ t('presentation.lead') }}</p>
         <div class="landing-actions">
           <RouterLink class="landing-button landing-button--primary" to="/demo">
             {{ t('landing.hero.primaryCta') }}<ArrowRight :size="17" />
@@ -41,24 +47,24 @@ onMounted(() => void showcaseStore.loadEvaluation())
           </a>
         </div>
         <ul class="landing-proof-list">
-          <li><BookOpenCheck :size="16" />{{ t('landing.hero.proofCitation') }}</li>
-          <li><ShieldCheck :size="16" />{{ t('landing.hero.proofBoundary') }}</li>
-          <li><TicketCheck :size="16" />{{ t('landing.hero.proofHandoff') }}</li>
+          <li><BookOpenCheck :size="16" />{{ t('presentation.verified') }}</li>
+          <li><ShieldCheck :size="16" />{{ t('presentation.readOnly') }}</li>
+          <li><TicketCheck :size="16" />{{ t('presentation.handoff') }}</li>
         </ul>
       </div>
-      <SupportPreview />
+      <div class="landing-hero__stage"><SupportPreview /></div>
     </section>
 
     <section class="landing-workbench" aria-labelledby="scenario-title">
-      <div class="landing-workbench__inner">
+      <div class="landing-workbench__inner landing-reveal">
         <header class="landing-section__heading landing-section__heading--dark">
           <div>
             <p class="landing-eyebrow landing-eyebrow--dark">
               <span></span>{{ t('landing.scenarios.eyebrow') }}
             </p>
-            <h2 id="scenario-title">{{ t('landing.scenarios.title') }}</h2>
+            <h2 id="scenario-title">{{ t('presentation.pathTitle') }}</h2>
           </div>
-          <p>{{ t('landing.scenarios.description') }}</p>
+          <p>{{ t('presentation.pathDescription') }}</p>
         </header>
 
         <div class="landing-scenario-grid">
@@ -100,7 +106,7 @@ onMounted(() => void showcaseStore.loadEvaluation())
       </div>
     </section>
 
-    <section id="project-notes" class="landing-section landing-evaluation">
+    <section id="project-notes" class="landing-section landing-evaluation landing-reveal">
       <div class="landing-evaluation__copy">
         <p class="landing-eyebrow"><span></span>{{ t('landing.evaluation.eyebrow') }}</p>
         <h2>{{ t('landing.evaluation.title') }}</h2>
@@ -111,6 +117,7 @@ onMounted(() => void showcaseStore.loadEvaluation())
           {{ t('landing.evaluation.sampleNote', { count: evaluation.metrics.total }) }}
         </small>
         <small v-else>{{ t('landing.evaluation.unavailable') }}</small>
+        <p class="evaluation-scope">{{ t('presentation.evaluationNote') }}</p>
       </div>
       <div v-if="evaluation" class="landing-evaluation__score">
         <div>
@@ -137,12 +144,18 @@ onMounted(() => void showcaseStore.loadEvaluation())
         </dl>
       </div>
       <div v-else class="landing-evaluation__empty">
-        <strong>{{ t('landing.evaluation.noResult') }}</strong>
+        <strong>{{
+          t(
+            showcaseStore.evaluationError
+              ? 'landing.evaluation.unavailable'
+              : 'landing.evaluation.noResult',
+          )
+        }}</strong>
         <p v-if="showcaseStore.evaluationError">{{ t('landing.evaluation.retryLater') }}</p>
       </div>
     </section>
 
-    <section id="architecture" class="landing-section landing-architecture">
+    <section id="architecture" class="landing-section landing-architecture landing-reveal">
       <header class="landing-section__heading">
         <div>
           <p class="landing-eyebrow"><span></span>{{ t('landing.architecture.eyebrow') }}</p>

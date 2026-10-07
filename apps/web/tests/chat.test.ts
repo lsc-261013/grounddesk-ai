@@ -12,6 +12,30 @@ describe('public chat request state', () => {
     vi.restoreAllMocks()
   })
 
+  it('does not claim that feedback was saved when the feedback request fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Feedback could not be saved')))
+    const store = useChatStore()
+    store.conversationId = crypto.randomUUID()
+    store.messages.push({
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: 'Completed answer',
+      citations: [],
+      stages: [],
+      tools: [],
+      streaming: false,
+      refused: false,
+      handedOff: false,
+      failed: false,
+      feedback: null,
+    })
+    const response = store.messages[0]!
+    await store.submitFeedback(response, 'helpful')
+    expect(response.feedback).toBeNull()
+    expect(response.feedbackPending).toBe(false)
+    expect(store.error).toBe('Feedback could not be saved')
+  })
+
   it('replaces the empty streaming placeholder with an explicit network failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
 
@@ -27,5 +51,48 @@ describe('public chat request state', () => {
       streaming: false,
       failed: true,
     })
+  })
+
+  it('terminates an SSE error without claiming a successful handoff or keeping a spinner', async () => {
+    const body = `data: ${JSON.stringify({ type: 'error', code: 'unavailable', message: 'Service unavailable' })}\n\n`
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body)))
+    const store = useChatStore()
+    await store.sendMessage('Question', 'en-US')
+    expect(store.messages[1]).toMatchObject({ failed: true, streaming: false, handedOff: false })
+    expect(store.error).toBe('Service unavailable')
+  })
+
+  it('keeps partial content and reports a stream without its completion event as incomplete', async () => {
+    const body = `data: ${JSON.stringify({ type: 'token', delta: 'Partial content' })}\n\n`
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body)))
+    const store = useChatStore()
+    await store.sendMessage('Question', 'en-US')
+    expect(store.messages[1]).toMatchObject({
+      content: 'Partial content',
+      failed: true,
+      streaming: false,
+    })
+    expect(store.error).toContain('ended before completion')
+  })
+
+  it('locks repeated sends and reset while the response is in flight', async () => {
+    let resolve: ((response: Response) => void) | undefined
+    const fetch = vi.fn().mockReturnValue(
+      new Promise<Response>((done) => {
+        resolve = done
+      }),
+    )
+    vi.stubGlobal('fetch', fetch)
+    const store = useChatStore()
+    const first = store.sendMessage('Question', 'zh-CN')
+    await store.sendMessage('Duplicate', 'zh-CN')
+    store.resetConversation()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(store.messages).toHaveLength(2)
+    resolve?.(
+      new Response('data: {"type":"error","code":"unavailable","message":"unavailable"}\n\n'),
+    )
+    await first
+    expect(store.isStreaming).toBe(false)
   })
 })

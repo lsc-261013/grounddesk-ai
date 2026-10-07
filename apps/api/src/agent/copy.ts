@@ -27,11 +27,14 @@ export const chatCopy = {
     human: '已按你的要求转接人工客服，客服可以查看本次会话上下文。',
     handoffPending: '这个会话已转入人工处理。你的新消息已保留在同一会话中，AI 不会继续自动回答。',
     providerFailure: 'AI 服务暂时无法完成这次回答。为避免编造，我已创建人工工单。',
+    planningFailure:
+      '这次工具计划暂时无法执行，不是你缺少订单信息。已转人工处理，请勿重复提供个人资料。',
     citationFailure: '这次生成结果未通过引用完整性校验，因此没有作为可靠答案保留。已转人工处理。',
     orderNotFound: '没有找到这个订单号，请检查示例订单号后重试。',
     emailMismatch: '订单号存在，但下单邮箱不匹配。为保护订单信息，我不会返回详情。',
-    toolFailure: '订单工具连续尝试后仍不可用。我没有猜测结果，并已转人工处理。',
+    toolFailure: '订单相关工具暂时不可用。我没有猜测结果，并已转人工处理。',
     orderToolSummary: '订单凭据已由服务端校验，返回的是脱敏只读信息。',
+    unverifiedToolSummary: '这次工具调用未得到可核验结果，没有返回订单详情。',
     returnToolSummary: '退货资格已由版本化政策规则计算，不会自动退款或修改订单。',
     returnRequested: '已将退货意向创建为待人工审批工单；系统没有执行退款。',
   },
@@ -49,6 +52,8 @@ export const chatCopy = {
       'This conversation is already with human support. Your new message remains in the same thread, and AI will not answer automatically.',
     providerFailure:
       'The AI service could not complete this answer. To avoid guessing, I created a human-support ticket.',
+    planningFailure:
+      'The tool plan could not be executed; this does not mean your order details are missing. A human-support ticket was created.',
     citationFailure:
       'The generated answer did not pass citation-integrity checks, so it was not retained as a reliable answer. A human ticket was created.',
     orderNotFound:
@@ -56,9 +61,11 @@ export const chatCopy = {
     emailMismatch:
       'The order number exists, but the checkout email does not match. I will not return order details.',
     toolFailure:
-      'The order tool still failed after its retry. I did not guess the result and created a human-support ticket.',
+      'The order tool is temporarily unavailable. I did not guess the result and created a human-support ticket.',
     orderToolSummary:
       'The server verified the order credentials and returned only masked, read-only details.',
+    unverifiedToolSummary:
+      'The tool did not return a verifiable result. No order details were returned.',
     returnToolSummary:
       'Versioned policy rules calculated the return eligibility; no refund or order change was performed.',
     returnRequested:

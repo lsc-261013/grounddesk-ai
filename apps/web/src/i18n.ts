@@ -1,6 +1,8 @@
 import { createI18n } from 'vue-i18n'
 
 import type { Locale } from '@grounddesk/shared'
+import { demoExperienceEn, demoExperienceZh } from './locales/demoExperience'
+import { presentationEn, presentationZh } from './locales/presentation'
 
 const LOCALE_STORAGE_KEY = 'grounddesk-locale'
 
@@ -18,6 +20,7 @@ export const i18n = createI18n({
   fallbackLocale: 'en-US',
   messages: {
     'zh-CN': {
+      presentation: presentationZh,
       navigation: {
         architecture: '架构基线',
         status: '系统状态',
@@ -109,7 +112,7 @@ export const i18n = createI18n({
           groundedResult: '用户看到答案、引用编号和相关原文',
           unknownLabel: '资料不足',
           unknownTitle: '不确定时明确停下来',
-          unknownDescription: '没有可靠证据、资料冲突或问题超出知识库时，系统不会编造。',
+          unknownDescription: '没有可靠证据、资料冲突或问题超出知识库时，停止回答并交给人工核对。',
           unknownResult: '说明已检查的范围，并触发人工接管',
           handoffLabel: '人工处理',
           handoffTitle: '把上下文完整交给客服',
@@ -166,6 +169,7 @@ export const i18n = createI18n({
       },
       demo: {
         back: '返回 GroundDesk',
+        experience: demoExperienceZh,
         eyebrow: '公开体验 · 可信 AI 客服',
         simulated: 'Demo Workspace · 所有商品与订单均为模拟数据',
         privacy: '请勿输入真实订单或个人信息',
@@ -255,6 +259,18 @@ export const i18n = createI18n({
         signingIn: '正在验证…',
         signOut: '退出登录',
         signInError: '登录失败，请检查账号、密码或服务连接。',
+        restoreError: '上次会话暂未恢复。你可以重新登录；这不代表账号或密码错误。',
+        errors: {
+          configuration: '登录配置暂不可用，请联系维护者。',
+          credentials: '邮箱或密码不正确，请核对后重试。',
+          provider_connection: '暂时无法连接登录服务，请稍后重试。尚未完成账号验证。',
+          provider_rejected: '登录服务未接受此次请求，请稍后重试或联系维护者。',
+          session_expired: '账号验证已完成，但工作区会话校验未通过。请重试；持续失败请联系维护者。',
+          workspace_connection:
+            '账号验证已完成，但暂时无法连接工作区服务。请稍后重试，无需修改密码。',
+          workspace_rejected: '账号验证已完成，但当前无法访问工作区，请联系管理员。',
+          workspace_response: '账号验证已完成，但工作区返回了无法读取的响应，请联系维护者。',
+        },
         notConfigured: 'Supabase 前端公开配置尚未生效。',
         needAccount: '创建自己的 GroundDesk 工作区',
         haveAccount: '已有账号？返回登录',
@@ -631,6 +647,7 @@ export const i18n = createI18n({
       locale: 'EN',
     },
     'en-US': {
+      presentation: presentationEn,
       navigation: {
         architecture: 'Architecture baseline',
         status: 'System status',
@@ -726,7 +743,7 @@ export const i18n = createI18n({
           unknownLabel: 'INSUFFICIENT EVIDENCE',
           unknownTitle: 'Uncertainty has a visible stopping point',
           unknownDescription:
-            'When sources are missing, conflicting, or outside the knowledge base, the system does not invent an answer.',
+            'When sources are missing, conflicting, or outside the knowledge base, answering stops and the question is passed to human review.',
           unknownResult: 'It explains what was checked and initiates human handoff',
           handoffLabel: 'HUMAN REVIEW',
           handoffTitle: 'Support receives the useful context',
@@ -788,6 +805,7 @@ export const i18n = createI18n({
       },
       demo: {
         back: 'Back to GroundDesk',
+        experience: demoExperienceEn,
         eyebrow: 'PUBLIC EXPERIENCE · TRUSTED AI SUPPORT',
         simulated: 'Demo Workspace · All products and orders are simulated',
         privacy: 'Do not enter real orders or personal information',
@@ -819,13 +837,13 @@ export const i18n = createI18n({
           footer: 'Trusted support by GroundDesk · Answers you can verify',
         },
         scenarios: {
-          productTitle: 'Ask about products and warranty',
+          productTitle: 'Product warranty',
           productDescription:
             'Try a question covered by the sources and inspect how the answer is grounded.',
-          citationTitle: 'Inspect the supporting evidence',
+          citationTitle: 'Inspect sources',
           citationDescription:
             'Start with compatibility, then open the title, section, and relevant excerpt.',
-          unknownTitle: 'See what happens without evidence',
+          unknownTitle: 'Beyond the sources',
           unknownDescription:
             'Ask beyond the knowledge base and check that the system stops and hands off.',
         },
@@ -846,7 +864,7 @@ export const i18n = createI18n({
         },
         order: {
           kicker: 'READY TO TRY',
-          title: 'Simulated order lookup',
+          title: 'Demo order lookup',
           description:
             "Order GD-2026D019 · demo.customer19{'@'}example.com. Demo data only; it does not identify a real customer.",
           fill: 'Fill the order query',
@@ -885,6 +903,24 @@ export const i18n = createI18n({
         signingIn: 'Verifying…',
         signOut: 'Sign out',
         signInError: 'Sign-in failed. Check the account, password, or service connection.',
+        restoreError:
+          'Your previous session could not be restored. You can sign in again; this does not mean your credentials are wrong.',
+        errors: {
+          configuration: 'Sign-in configuration is unavailable. Contact the maintainer.',
+          credentials: 'The email or password is incorrect. Check them and try again.',
+          provider_connection:
+            'The sign-in service cannot be reached. Try again later. Credentials have not been verified.',
+          provider_rejected:
+            'The sign-in service did not accept this request. Try again later or contact the maintainer.',
+          session_expired:
+            'Your account was verified, but workspace session validation failed. Retry or contact the maintainer.',
+          workspace_connection:
+            'Your account was verified, but the workspace service is unavailable. Retry later; you do not need to change your password.',
+          workspace_rejected:
+            'Your account was verified, but workspace access is unavailable. Contact your administrator.',
+          workspace_response:
+            'Your account was verified, but the workspace response could not be read. Contact the maintainer.',
+        },
         notConfigured: 'The public Supabase web configuration is not available.',
         needAccount: 'Create your own GroundDesk workspace',
         haveAccount: 'Already have an account? Return to sign in',

@@ -8,6 +8,7 @@ const authMock = vi.hoisted(() => ({
   listener: null as ((event: string, session: Session | null) => void) | null,
   session: null as Session | null,
   signOutError: null as Error | null,
+  signInError: null as { code?: string; status?: number; name?: string } | null,
 }))
 
 vi.mock('../src/lib/supabase', () => ({
@@ -20,6 +21,8 @@ vi.mock('../src/lib/supabase', () => ({
           return { data: { subscription: { unsubscribe: vi.fn() } } }
         },
         signOut: () => Promise.resolve({ error: authMock.signOutError }),
+        signInWithPassword: () =>
+          Promise.resolve({ data: { session: authMock.session }, error: authMock.signInError }),
       },
     }) as unknown as SupabaseClient,
 }))
@@ -59,6 +62,7 @@ describe('authentication session synchronization', () => {
     authMock.session = providerSession
     authMock.listener = null
     authMock.signOutError = null
+    authMock.signInError = null
     vi.stubGlobal(
       'fetch',
       vi.fn(() =>
@@ -83,6 +87,77 @@ describe('authentication session synchronization', () => {
 
     expect(store.activeMembership?.workspace.slug).toBe('avenlo-demo')
     expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('separates restored-session failure from a submitted login error', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 503 }))
+    const { useAuthStore } = await import('../src/stores/auth')
+    const store = useAuthStore()
+    await store.initialize()
+    expect(store.loginError).toBeNull()
+    expect(store.restoreError).toBe('workspace_connection')
+    expect(await store.signIn('public@example.com', 'fixture-password')).toBe(false)
+    expect(store.loginError).toBe('workspace_connection')
+    expect(store.isAuthenticated).toBe(false)
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(apiSession)))
+    expect(await store.signIn('public@example.com', 'fixture-password')).toBe(true)
+    expect(store.loginError).toBeNull()
+    expect(store.restoreError).toBeNull()
+  })
+
+  it('distinguishes invalid credentials from an unreachable Auth provider', async () => {
+    const { useAuthStore } = await import('../src/stores/auth')
+    const store = useAuthStore()
+    authMock.signInError = { code: 'invalid_credentials', status: 400 }
+    expect(await store.signIn('public@example.com', 'fixture-password')).toBe(false)
+    expect(store.loginError).toBe('credentials')
+    authMock.signInError = { name: 'AuthRetryableFetchError', status: 0 }
+    expect(await store.signIn('public@example.com', 'fixture-password')).toBe(false)
+    expect(store.loginError).toBe('provider_connection')
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('deduplicates simultaneous provider events and sign-in session loads', async () => {
+    const { useAuthStore } = await import('../src/stores/auth')
+    const store = useAuthStore()
+    authMock.session = null
+    await store.initialize()
+    let resolveFetch!: (value: Response) => void
+    vi.mocked(fetch).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        }),
+    )
+    authMock.session = providerSession
+    authMock.listener?.('SIGNED_IN', providerSession)
+    const signingIn = store.signIn('public@example.com', 'fixture-password')
+    await Promise.resolve()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    resolveFetch(new Response(JSON.stringify(apiSession)))
+    expect(await signingIn).toBe(true)
+  })
+
+  it('does not restore membership when an in-flight request completes after logout', async () => {
+    const { useAuthStore } = await import('../src/stores/auth')
+    const store = useAuthStore()
+    authMock.session = null
+    await store.initialize()
+    let resolveFetch!: (value: Response) => void
+    vi.mocked(fetch).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        }),
+    )
+    authMock.session = providerSession
+    const signingIn = store.signIn('public@example.com', 'fixture-password')
+    await Promise.resolve()
+    await store.signOut()
+    resolveFetch(new Response(JSON.stringify(apiSession)))
+    await signingIn
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.session).toBeNull()
   })
 
   it('clears the browser session even when the provider cannot complete sign-out', async () => {
