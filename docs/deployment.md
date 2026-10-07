@@ -22,7 +22,7 @@ flowchart LR
 - API：https://grounddesk-api-lsc.onrender.com
 - Health：https://grounddesk-api-lsc.onrender.com/health
 
-以上地址与线上报告来自历史部署记录，不能证明 2026-10-06 的首页/问答改版已上线。本次本地验证和截图见 [当前交互交接](demo-round-four-handoff.md)；后续发布后需要重新做线上检查，不继承历史 Lighthouse 或模型评测数字。
+2026-10-07 已在上述公开地址实际验收改版：新前端资源、connected API、Chromium 线上核心 Smoke 3/3 通过。两个新部署提交 `1f4845f` 由所有者确认，控制台 Live 截图、Deployment ID 和本次构建日志尚未独立读取，保留未验证项。证据见 [发布记录](release-2026-10-06.md) 与 [当前交互交接](demo-round-four-handoff.md)，不继承历史 Lighthouse 或完整模型评测数字。
 
 ## 1. 部署前门禁
 
@@ -180,6 +180,18 @@ pnpm test:e2e
 `render.yaml` 的两个服务均设置 `autoDeployTrigger: commit`。真正部署哪一条分支由服务/Blueprint 设置决定；推送受跟踪分支可能触发构建与上线。仅备份源码时推送非部署分支；更新主分支前先确认是否授权同时发布，不自行关闭或修改服务的自动部署设置。
 
 本地门禁成功不等于部署成功，也不等于公开 AI 链路已验收。发布后应核对两个服务的 Deployment 状态与提交 SHA，然后从公开入口实际检查登录、问答引用、订单工具和接管。没有实际完成的检查应保留为未验证。
+
+2026-10-07 的实际情况：两服务 Settings 为 main / On Commit，但推送后 Deploys 仍只有旧版本；确切自动触发原因未得到平台证据。所有者刷新核对后各执行一次 `Manual Deploy → Deploy latest commit`，确认两端出现 `1f4845f`。随后公开资源确已更新，线上 Smoke 通过。不要将休眠直接诊断成自动部署失败，也不要用重复部署或清缓存猜测修复。
+
+显式线上验收（只用公开模拟资料）：
+
+```powershell
+$env:E2E_BASE_URL = 'https://grounddesk-ai-lsc.onrender.com'
+$env:E2E_RELEASE_SMOKE = 'true'
+pnpm --filter @grounddesk/web exec playwright test e2e/release-smoke.spec.ts
+```
+
+仅在本机已配置可信代理且确有需要时，额外设置 `E2E_PROXY_URL` 为该既有代理；不把本机代理地址写进 Render。该测试默认禁用，问答前通过管理员 API 查询启用 Webhook 数量；有通知风险则跳过并注明，跳过不等于通过。正常执行产生少量演示会话与工单，不调用 Reset 或真实退款，也不处理已有工单。文档/测试/截图补档提交使用 Render 官方 `[skip render]` 标记，避免无应用变更的重复部署；生产版本仍按最后实际部署 SHA 记录。
 
 ### 6.2 Windows 本地认证连接诊断
 

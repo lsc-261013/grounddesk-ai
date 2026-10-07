@@ -105,7 +105,12 @@ test('live demo roles retain authentication and server permission boundaries', a
     expect(isolation.status()).toBe(403)
     await page.goto(role === 'admin' ? '/console/orders' : '/console/tickets')
     await page.reload()
-    await expect(page.locator('.role-chip')).toHaveText(role)
+    await expect(
+      page.getByRole('heading', {
+        name: role === 'admin' ? '订单' : '人工工单队列',
+        exact: true,
+      }),
+    ).toBeVisible()
     await expect(page.getByRole('alert')).toHaveCount(0)
     await page.getByRole('button', { name: '退出登录', exact: true }).click()
     await expect(page).toHaveURL(/\/login$/)
@@ -141,6 +146,7 @@ test('live RAG links real sources, order tool is read-only, and safe handoff com
     await page.getByRole('button', { name: '发送问题', exact: true }).click()
     const answer = page.locator('.demo-message[data-role="assistant"]').last()
     await expect(answer.locator('.answer-feedback')).toBeVisible({ timeout: 60_000 })
+    await expect(page.locator('.demo-chat__header i')).not.toHaveClass(/is-busy/)
     await expect(answer).toHaveAttribute('data-failed', 'false')
     await expect(page.locator('.demo-chat__error')).toHaveCount(0)
     return answer
@@ -160,15 +166,21 @@ test('live RAG links real sources, order tool is read-only, and safe handoff com
   expect((await source.locator('blockquote').innerText()).length).toBeGreaterThan(20)
   await answer.locator('.demo-message__source-button').click()
   await expect(source).toHaveAttribute('open', '')
-  await page.screenshot({ path: `${evidenceDirectory}/rag-source-1440x900.png` })
+  await page.screenshot({
+    path: `${evidenceDirectory}/rag-source-1440x900.png`,
+    animations: 'disabled',
+  })
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: '返回对话', exact: true }).click()
+  await page.getByRole('button', { name: '返回当前问答', exact: true }).click()
   await page.getByLabel('输入客服问题', { exact: true }).fill('草稿保留检查')
   await lastMarker.click()
   await expect(source.locator('blockquote')).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
-  await page.screenshot({ path: `${evidenceDirectory}/rag-source-390x844.png` })
-  await page.getByRole('button', { name: '返回对话', exact: true }).click()
+  await page.screenshot({
+    path: `${evidenceDirectory}/rag-source-390x844.png`,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: '返回当前问答', exact: true }).click()
   await expect(page.getByLabel('输入客服问题', { exact: true })).toHaveValue('草稿保留检查')
   await page.getByRole('button', { name: '新建会话', exact: true }).click()
   const order = await send('查询订单 GD-2026D019，下单邮箱是 demo.customer19@example.com。')
@@ -181,5 +193,8 @@ test('live RAG links real sources, order tool is read-only, and safe handoff com
   await expect(handoff).toContainText('资料不足')
   await handoff.locator('.demo-message__source-button').click()
   await expect(page.locator('.demo-evidence__handoff')).toBeVisible()
-  await page.screenshot({ path: `${evidenceDirectory}/handoff-390x844.png` })
+  await page.screenshot({
+    path: `${evidenceDirectory}/handoff-390x844.png`,
+    animations: 'disabled',
+  })
 })
