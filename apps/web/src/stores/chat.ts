@@ -14,6 +14,7 @@ import { computed, ref } from 'vue'
 import { useAuthStore } from './auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787'
+const CHAT_IDLE_TIMEOUT_MS = 60_000
 const SESSION_STORAGE_KEY = 'grounddesk-public-chat-session'
 
 interface StageEntry {
@@ -49,10 +50,15 @@ const requestFailureCopy = (locale: Locale): string =>
     : 'The support service could not be reached. Please try again shortly.'
 
 const requestFailureDetail = (cause: unknown, locale: Locale): string => {
+  if (cause instanceof Error && cause.name === 'AbortError') {
+    return locale === 'zh-CN'
+      ? '服务超过 60 秒没有返回新内容，已停止等待。已有内容可能不完整，工单状态尚未确认。请核对后再决定是否重新发送。'
+      : 'No new content arrived for 60 seconds, so waiting stopped. The result may be incomplete and ticket status is unconfirmed. Review before resending.'
+  }
   if (cause instanceof TypeError && /fetch/i.test(cause.message)) {
     return locale === 'zh-CN'
-      ? '无法连接问答服务，请检查 API 地址、服务状态或跨域配置。'
-      : 'The support service is unreachable. Check the API URL, service status, or CORS configuration.'
+      ? '暂时未能连接问答服务。请检查网络或稍后重试，原问题可放回输入框。'
+      : 'The support service could not be reached. Check your connection or try again shortly; you can restore the original question.'
   }
   return cause instanceof Error
     ? cause.message
@@ -205,6 +211,13 @@ export const useChatStore = defineStore('chat', () => {
       throw new Error('The assistant response could not be initialized.')
     }
 
+    const controller = new AbortController()
+    let idleTimeout: ReturnType<typeof setTimeout>
+    const resetIdleTimeout = (): void => {
+      clearTimeout(idleTimeout)
+      idleTimeout = setTimeout(() => controller.abort(), CHAT_IDLE_TIMEOUT_MS)
+    }
+    resetIdleTimeout()
     try {
       const isWorkspace = channel.startsWith('workspace:')
       const workspaceId = isWorkspace ? channel.slice('workspace:'.length) : null
@@ -212,6 +225,7 @@ export const useChatStore = defineStore('chat', () => {
         ? `/v1/workspaces/${workspaceId}/playground/stream`
         : '/v1/public/workspaces/avenlo-demo/chat/stream'
       const response = await fetch(`${API_BASE_URL}${path}`, {
+        signal: controller.signal,
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -232,6 +246,7 @@ export const useChatStore = defineStore('chat', () => {
       let buffer = ''
       while (true) {
         const rawResult: unknown = await reader.read()
+        resetIdleTimeout()
         const { done, value } = streamReadResultSchema.parse(rawResult)
         buffer += decoder.decode(value, { stream: !done })
         const lines = buffer.split(/\r?\n/)
@@ -261,6 +276,7 @@ export const useChatStore = defineStore('chat', () => {
       assistant.failed = true
       assistant.streaming = false
     } finally {
+      clearTimeout(idleTimeout!)
       assistant.streaming = false
       isStreaming.value = false
     }

@@ -125,6 +125,11 @@ export const i18n = createI18n({
           description:
             '固定双语样本检查引用覆盖、工具选择、无答案接管与跨 Workspace 隔离。这里仅展示接口返回的最新真实 Provider 运行，不用静态数字代替结果。',
           lastRun: '最新真实运行',
+          loading: '正在读取历史真实评测',
+          loadingHint: '记录来自已完成的评测运行，读取不会触发新的模型评测。',
+          slow: '评测服务响应较慢，仍在等待',
+          slowHint: '免费托管服务可能需要唤醒，也可能遇到网络延迟。最多等待 60 秒后可手动重试。',
+          retry: '重新读取评测',
           unavailable: '真实评测数据暂不可用',
           liveCases: '真实 Provider 用例',
           citations: '引用覆盖',
@@ -757,6 +762,12 @@ export const i18n = createI18n({
           description:
             'A fixed bilingual set checks citation coverage, tool choice, unknown-answer handoff, and cross-workspace isolation. This page shows only the latest live-provider run returned by the API, never placeholder scores.',
           lastRun: 'Latest live run',
+          loading: 'Loading historical live evaluation',
+          loadingHint: 'Reading completed runs does not start a new model evaluation.',
+          slow: 'The evaluation service is taking longer to respond',
+          slowHint:
+            'Free hosting may need to wake up, or the network may be slow. You can retry after the 60-second loading limit.',
+          retry: 'Reload evaluation',
           unavailable: 'Live evaluation data is unavailable',
           liveCases: 'live-provider cases',
           citations: 'Citation coverage',

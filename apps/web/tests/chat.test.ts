@@ -1,11 +1,15 @@
 // @vitest-environment happy-dom
 
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useChatStore } from '../src/stores/chat'
 
 describe('public chat request state', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
   beforeEach(() => {
     window.localStorage.clear()
     setActivePinia(createPinia())
@@ -43,7 +47,7 @@ describe('public chat request state', () => {
     await store.sendMessage('LinkCore C240 的保修期是多久？', 'zh-CN')
 
     expect(store.isStreaming).toBe(false)
-    expect(store.error).toBe('无法连接问答服务，请检查 API 地址、服务状态或跨域配置。')
+    expect(store.error).toBe('暂时未能连接问答服务。请检查网络或稍后重试，原问题可放回输入框。')
     expect(store.messages).toHaveLength(2)
     expect(store.messages[1]).toMatchObject({
       role: 'assistant',
@@ -95,4 +99,33 @@ describe('public chat request state', () => {
     await first
     expect(store.isStreaming).toBe(false)
   })
+})
+
+it('releases a stalled chat request without automatically replaying it', async () => {
+  window.localStorage.clear()
+  setActivePinia(createPinia())
+  vi.useFakeTimers()
+  const fetch = vi.fn(
+    (_url: string, init: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () =>
+          reject(new DOMException('Aborted', 'AbortError')),
+        )
+      }),
+  )
+  vi.stubGlobal('fetch', fetch)
+  try {
+    const store = useChatStore()
+    const pending = store.sendMessage('测试问题', 'zh-CN')
+    await vi.advanceTimersByTimeAsync(60_000)
+    await pending
+    expect(store.isStreaming).toBe(false)
+    expect(store.messages[1]).toMatchObject({ failed: true, handedOff: false })
+    expect(store.error).toContain('工单状态尚未确认')
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(0)
+  } finally {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  }
 })

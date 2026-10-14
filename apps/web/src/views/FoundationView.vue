@@ -116,7 +116,6 @@ onMounted(() => void showcaseStore.loadEvaluation())
           {{ new Date(evaluation.completedAt).toLocaleDateString(locale) }} ·
           {{ t('landing.evaluation.sampleNote', { count: evaluation.metrics.total }) }}
         </small>
-        <small v-else>{{ t('landing.evaluation.unavailable') }}</small>
         <p class="evaluation-scope">{{ t('presentation.evaluationNote') }}</p>
       </div>
       <div v-if="evaluation" class="landing-evaluation__score">
@@ -143,15 +142,41 @@ onMounted(() => void showcaseStore.loadEvaluation())
           </div>
         </dl>
       </div>
-      <div v-else class="landing-evaluation__empty">
+      <div
+        v-else
+        class="landing-evaluation__empty"
+        role="status"
+        :aria-busy="showcaseStore.isEvaluationLoading"
+      >
         <strong>{{
           t(
-            showcaseStore.evaluationError
-              ? 'landing.evaluation.unavailable'
-              : 'landing.evaluation.noResult',
+            showcaseStore.isEvaluationLoading
+              ? showcaseStore.isEvaluationSlow
+                ? 'landing.evaluation.slow'
+                : 'landing.evaluation.loading'
+              : showcaseStore.evaluationError
+                ? 'landing.evaluation.unavailable'
+                : 'landing.evaluation.noResult',
           )
         }}</strong>
-        <p v-if="showcaseStore.evaluationError">{{ t('landing.evaluation.retryLater') }}</p>
+        <p v-if="showcaseStore.isEvaluationLoading">
+          {{
+            t(
+              showcaseStore.isEvaluationSlow
+                ? 'landing.evaluation.slowHint'
+                : 'landing.evaluation.loadingHint',
+            )
+          }}
+        </p>
+        <p v-else-if="showcaseStore.evaluationError">{{ t('landing.evaluation.retryLater') }}</p>
+        <button
+          v-if="showcaseStore.evaluationError && !showcaseStore.isEvaluationLoading"
+          type="button"
+          class="landing-button landing-button--secondary"
+          @click="showcaseStore.loadEvaluation(true)"
+        >
+          {{ t('landing.evaluation.retry') }}
+        </button>
       </div>
     </section>
 

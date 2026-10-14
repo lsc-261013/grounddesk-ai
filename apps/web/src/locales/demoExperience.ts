@@ -26,6 +26,16 @@ export const demoExperienceZh = {
   page: '第 {page} 页',
   handoffNotice: '服务已确认创建人工工单，等待客服处理。这不代表真人已在线，也没有自动退款。',
   handoffUnconfirmed: '现有资料不足；本条消息未确认工单创建成功，请勿视为已经转接。',
+  serviceLoading: '正在读取演示资料',
+  serviceSlow: '服务响应较慢，仍在等待',
+  serviceWaitingHint: '你可以先选示例、编辑问题。资料请求最多等待 60 秒，不会自动发送问题。',
+  serviceSlowHint:
+    '免费托管服务可能需要唤醒，也可能遇到网络延迟。可继续准备问题；若未连上，会显示重试入口。',
+  serviceUnavailable: '暂时未能读取演示资料',
+  serviceUnavailableHint: '稍后重试连接。重试只读取公开资料，不发送问题，已输入的草稿会保留。',
+  serviceLoaded: '演示资料已载入',
+  serviceEmpty: '暂无演示商品资料',
+  serviceRetry: '重试读取资料',
   loadingShort: '加载中',
   unavailable: '暂不可用',
   orderNumber: '订单号',
@@ -98,6 +108,18 @@ export const demoExperienceEn = {
     'The service confirmed a human-review ticket. It is awaiting support, not a live human reply. No refund was issued.',
   handoffUnconfirmed:
     'The sources are insufficient. This message did not confirm a ticket was created; do not assume the handoff succeeded.',
+  serviceLoading: 'Loading demo information',
+  serviceSlow: 'The service is taking longer to respond',
+  serviceWaitingHint:
+    'Choose an example or draft a question while you wait. Loading times out after 60 seconds; questions are never sent automatically.',
+  serviceSlowHint:
+    'Free hosting may need to wake up, or the network may be slow. Keep drafting; a retry option appears if loading fails.',
+  serviceUnavailable: 'Demo information could not be loaded',
+  serviceUnavailableHint:
+    'Try reconnecting shortly. Retry only reads public information; it does not send a question or clear your draft.',
+  serviceLoaded: 'Demo information loaded',
+  serviceEmpty: 'No demo products available',
+  serviceRetry: 'Retry loading information',
   loadingShort: 'Loading',
   unavailable: 'Unavailable',
   orderNumber: 'Order number',

@@ -18,6 +18,15 @@ const { locale, t } = useI18n()
 const route = useRoute()
 const chatStore = useChatStore()
 const showcaseStore = useShowcaseStore()
+const serviceStatus = computed(() =>
+  showcaseStore.isProductsLoading
+    ? 'serviceLoading'
+    : showcaseStore.productError
+      ? 'serviceUnavailable'
+      : showcaseStore.products.length
+        ? 'serviceLoaded'
+        : 'serviceEmpty',
+)
 const draft = ref('')
 const composing = ref(false)
 const transcript = ref<HTMLElement | null>(null)
@@ -168,6 +177,36 @@ onMounted(() => {
         <p>{{ t('presentation.demo.description') }}</p>
       </div>
       <div
+        v-if="showcaseStore.isProductsLoading || showcaseStore.productError"
+        class="demo-service-notice"
+        :class="{ 'is-error': showcaseStore.productError }"
+      >
+        <div role="status" :aria-busy="showcaseStore.isProductsLoading">
+          <strong>{{
+            t('demo.experience.' + (showcaseStore.isProductsSlow ? 'serviceSlow' : serviceStatus))
+          }}</strong>
+          <p>
+            {{
+              t(
+                'demo.experience.' +
+                  (showcaseStore.productError
+                    ? 'serviceUnavailableHint'
+                    : showcaseStore.isProductsSlow
+                      ? 'serviceSlowHint'
+                      : 'serviceWaitingHint'),
+              )
+            }}
+          </p>
+        </div>
+        <button
+          v-if="showcaseStore.productError"
+          type="button"
+          @click="showcaseStore.loadProducts(true)"
+        >
+          <RotateCcw :size="15" />{{ t('demo.experience.serviceRetry') }}
+        </button>
+      </div>
+      <div
         class="demo-mobile-tabs"
         role="tablist"
         :aria-label="t('demo.experience.tabsLabel')"
@@ -205,8 +244,19 @@ onMounted(() => {
               <div>
                 <h2 id="demo-chat-title">Avenlo Support</h2>
                 <p>
-                  <i :class="{ 'is-busy': chatStore.isStreaming }"></i
-                  >{{ chatStore.isStreaming ? t('demo.chat.processing') : t('demo.chat.ready') }}
+                  <i
+                    :class="{
+                      'is-busy': chatStore.isStreaming || showcaseStore.isProductsLoading,
+                      'is-unavailable': showcaseStore.productError || chatStore.error,
+                    }"
+                  ></i
+                  >{{
+                    chatStore.isStreaming
+                      ? t('demo.chat.processing')
+                      : chatStore.error
+                        ? t('demo.experience.requestNotice')
+                        : t('demo.experience.' + serviceStatus)
+                  }}
                 </p>
               </div>
             </div>
